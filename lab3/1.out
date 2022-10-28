@@ -1,0 +1,117 @@
+token	lexeme	lineno	offsett	scopeno
+INT	int	1	0
+ID	f	1	3	0
+LPAREN	(	1	4
+RPAREN	)	1	5
+LBRACE	{	1	6
+INT	int	2	0
+ID	a	2	3	1
+SEM	;	2	4
+ID	a	3	0	1
+ASSIGN	=	3	1
+NUMBER	0	3	2
+SEM	;	3	3
+WHILE	while	4	0
+LPAREN	(	4	5
+ID	a	4	6	1
+LESS	<	4	7
+NUMBER	10	4	8
+RPAREN	)	4	10
+LBRACE	{	4	11
+ID	a	5	0	2
+ASSIGN	=	5	1
+ID	a	5	2	2
+MUL	*	5	3
+NUMBER	2345	5	4
+SEM	;	5	8
+RBRACE	}	6	0
+RETURN	return	7	0
+ID	a	7	6	1
+SEM	;	7	7
+RBRACE	}	8	0
+INT	int	10	0
+ID	main	10	3	0
+LPAREN	(	10	7
+RPAREN	)	10	8
+LBRACE	{	10	9
+INT	int	11	0
+ID	_testid	11	3	3
+SEM	;	11	10
+ID	_testid	12	0	3
+ASSIGN	=	12	7
+NUMBER	0	12	8
+SEM	;	12	9
+IF	if	13	0
+LPAREN	(	13	2
+ID	_testid	13	3	3
+EQUAL	==	13	10
+NUMBER	0	13	12
+RPAREN	)	13	13
+LBRACE	{	13	14
+INT	int	14	0
+ID	_testid	14	3	4
+SEM	;	14	10
+INT	int	15	0
+ID	_testid2	15	3	4
+SEM	;	15	11
+ID	_testid1	16	0	4
+ASSIGN	=	16	8
+ID	_testid1	16	9	4
+ADD	+	16	17
+NUMBER	1	16	18
+SEM	;	16	19
+LBRACE	{	17	0
+ID	a	18	0	5
+ASSIGN	=	18	1
+NUMBER	1	18	2
+SEM	;	18	3
+RBRACE	}	19	0
+RBRACE	}	20	0
+LBRACE	{	22	0
+INT	int	23	0
+ID	a	23	3	6
+SEM	;	23	4
+LBRACE	{	24	0
+ID	b	25	0	7
+ASSIGN	=	25	1
+NUMBER	2	25	2
+SEM	;	25	3
+RBRACE	}	26	0
+RBRACE	}	27	0
+LBRACE	{	28	0
+INT	int	29	0
+ID	a	29	3	8
+SEM	;	29	4
+RBRACE	}	30	0
+INT	int	31	0
+ID	b	31	3	3
+SEM	;	31	4
+RETURN	return	32	0
+NUMBER	0	32	6
+SEM	;	32	7
+RBRACE	}	33	0
+VOID	void	36	0
+ID	test	36	4	0
+LPAREN	(	36	8
+RPAREN	)	36	9
+LBRACE	{	37	0
+INT	int	38	0
+ID	a	38	3	9
+SEM	;	38	4
+LBRACE	{	39	0
+INT	int	41	0
+ID	b	41	3	10
+SEM	;	41	4
+RBRACE	}	42	0
+INT	int	43	0
+ID	a	43	3	9
+SEM	;	43	4
+LBRACE	{	44	0
+INT	int	45	0
+ID	b	45	3	11
+SEM	;	45	4
+RBRACE	}	46	0
+INT	int	47	0
+ID	a	47	3	9
+SEM	;	47	4
+RBRACE	}	48	0
