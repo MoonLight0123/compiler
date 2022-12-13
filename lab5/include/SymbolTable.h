@@ -89,8 +89,8 @@ public:
     bool isLocal() const {return scope >= LOCAL;}; 
     int getScope() const {return scope;};
     void setAddr(Operand *addr) {this->addr = addr;};
-    void setFuncType(Type *t){this->type=t;}
     Operand* getAddr() {return addr;};
+    //void setFuncType(Type *t) {this->type=t;};
     // You can add any function you need here.
 };
 

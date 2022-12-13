@@ -336,7 +336,8 @@ void Id::output(int level)
 void CompoundStmt::output(int level)
 {
     fprintf(yyout, "%*cCompoundStmt\n", level, ' ');
-    stmt->output(level + 4);
+    if(stmt!=nullptr)
+        stmt->output(level + 4);
 }
 
 void SeqNode::output(int level)

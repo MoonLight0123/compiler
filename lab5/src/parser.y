@@ -506,8 +506,9 @@ FuncDef
 
         SymbolEntry *se;
         se = identifiers->lookup($2);
-        IdentifierSymbolEntry* ss=(IdentifierSymbolEntry*)se;
-        ss->setFuncType(((Type*)funcType));
+        //IdentifierSymbolEntry* ss=(IdentifierSymbolEntry*)se;
+        //ss->setFuncType(funcType);
+        se->setType((Type*)funcType);
     }
     BlockStmt
     {
