@@ -10,12 +10,14 @@ class IRBuilder
 private:
     Unit *unit;
     BasicBlock *insertBB;   // The current basicblock that instructions should be inserted into.
-
+    bool isGenBranch;
 public:
     IRBuilder(Unit*unit) : unit(unit){};
     void setInsertBB(BasicBlock*bb){insertBB = bb;};
     Unit* getUnit(){return unit;};
     BasicBlock* getInsertBB(){return insertBB;};
+    void setIsGenBranch(bool s){isGenBranch=s;};
+    bool getIsGenBranch(){return isGenBranch;};
 };
 
 #endif

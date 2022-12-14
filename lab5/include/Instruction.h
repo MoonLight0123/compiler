@@ -71,7 +71,7 @@ public:
     BinaryInstruction(unsigned opcode, Operand *dst, Operand *src1, Operand *src2, BasicBlock *insert_bb = nullptr);
     ~BinaryInstruction();
     void output() const;
-    enum {SUB, ADD, AND, OR};
+    enum {SUB, ADD, MUL,DIV,MOD,AND, OR};
 };
 
 class CmpInstruction : public Instruction
@@ -106,6 +106,8 @@ public:
     BasicBlock* getTrueBranch();
     void setFalseBranch(BasicBlock*);
     BasicBlock* getFalseBranch();
+    BasicBlock **truePatchBranch() {return &true_branch;};
+    BasicBlock **falsePatchBranch() {return &false_branch;};
 protected:
     BasicBlock* true_branch;
     BasicBlock* false_branch;

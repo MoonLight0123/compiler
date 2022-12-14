@@ -48,10 +48,10 @@ $(BINARY):$(OBJ)
 app:$(LEXER) $(PARSER) $(BINARY)
 
 run:app
-	@$(BINARY) -o example.ll -a example.sy
+	@$(BINARY) -o example.ll -i example.sy
 
 gdb:app
-	@gdb --args $(BINARY) -o example.ll -a example.sy
+	@gdb --args $(BINARY) -o example.ll -i example.sy
 
 $(OBJ_PATH)/lexer.o:$(SRC_PATH)/lexer.cpp
 	@mkdir -p $(OBJ_PATH)

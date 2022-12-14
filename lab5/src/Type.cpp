@@ -32,18 +32,22 @@ std::string FunctionType::toStr()
 {
     std::ostringstream buffer;
     buffer << returnType->toStr() << "() ParamType: ";
-    /*
-    int j=paramsType.size();
-    for(int i=0;i<j;i++)
-        buffer<<paramsType[i]<<" ";
-    */
    int j=paramsType.size();
     for(int i=0;i<j;i++){
-
         if(paramsType[i]->isInt()){
             buffer <<"int"<<" ";
         }
+    }
+    return buffer.str();
+}
 
+std::string ArrayType::toStr()
+{
+    std::ostringstream buffer;
+    buffer << arrayElementType->toStr() << " arraydimVal: ";
+   int j=dimsVal.size();
+    for(int i=0;i<j;i++){
+        buffer<<dimsVal[i]<<" ";
     }
     return buffer.str();
 }

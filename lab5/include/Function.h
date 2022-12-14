@@ -19,14 +19,16 @@ class Function
 private:
     std::vector<BasicBlock *> block_list;
     SymbolEntry *sym_ptr;
-    BasicBlock *entry;
+    BasicBlock *entry,*exit;
     Unit *parent;
-
 public:
+    std::vector<SymbolEntry*> funcParams;
+    
     Function(Unit *, SymbolEntry *);
     ~Function();
     void insertBlock(BasicBlock *bb) { block_list.push_back(bb); };
     BasicBlock *getEntry() { return entry; };
+    BasicBlock *getExit(){return exit;};
     void remove(BasicBlock *bb);
     void output() const;
     std::vector<BasicBlock *> &getBlockList(){return block_list;};

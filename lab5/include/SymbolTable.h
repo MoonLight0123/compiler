@@ -6,6 +6,7 @@
 
 class Type;
 class Operand;
+class FunctionType;
 
 class SymbolEntry
 {
@@ -79,7 +80,7 @@ private:
     int scope;
     Operand *addr;  // The address of the identifier.
     // You can add any field you need here.
-
+    int initVal;
 public:
     IdentifierSymbolEntry(Type *type, std::string name, int scope);
     virtual ~IdentifierSymbolEntry() {};
@@ -90,8 +91,9 @@ public:
     int getScope() const {return scope;};
     void setAddr(Operand *addr) {this->addr = addr;};
     Operand* getAddr() {return addr;};
-    //void setFuncType(Type *t) {this->type=t;};
     // You can add any function you need here.
+    void setInitVal(int i){this->initVal=i;};
+    int getInitVal(){return initVal;}
 };
 
 
@@ -147,4 +149,3 @@ extern SymbolTable *identifiers;
 extern SymbolTable *globals;
 
 #endif
-

@@ -8,7 +8,7 @@ class Type
 private:
     int kind;
 protected:
-    enum {INT, VOID, FUNC, PTR,FLOAT};
+    enum {INT, VOID, FUNC, PTR,FLOAT,ARRAY};
 public:
     Type(int kind) : kind(kind) {};
     virtual ~Type() {};
@@ -25,7 +25,11 @@ private:
     int size;
 public:
     IntType(int size) : Type(Type::INT), size(size){};
+    void setSize(int size){this->size=size;}
+    int getSize(){return size;}
     std::string toStr();
+    bool isBool(){return size==1;};
+    bool isInt(){return size==32;};
 };
 
 class VoidType : public Type
@@ -40,10 +44,22 @@ class FunctionType : public Type
 public:
     Type *returnType;
     std::vector<Type*> paramsType;
+
     
     FunctionType(Type* returnType, std::vector<Type*> paramsType) : 
     Type(Type::FUNC), returnType(returnType), paramsType(paramsType){};
     Type* getRetType() {return returnType;};
+    std::string toStr();
+};
+
+
+class ArrayType : public Type
+{
+public:
+    Type *arrayElementType;
+    std::vector<int> dimsVal;
+    ArrayType(Type *arrayElementType,std::vector<int> dimsVal):
+    Type(Type::ARRAY),arrayElementType(arrayElementType),dimsVal(dimsVal){};
     std::string toStr();
 };
 
@@ -80,4 +96,3 @@ public:
 };
 
 #endif
-

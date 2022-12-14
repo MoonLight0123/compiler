@@ -9,6 +9,7 @@ Function::Function(Unit *u, SymbolEntry *s)
 {
     u->insertFunc(this);
     entry = new BasicBlock(this);
+    exit=new BasicBlock(this);
     sym_ptr = s;
     parent = u;
 }
