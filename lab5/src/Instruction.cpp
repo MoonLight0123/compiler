@@ -81,14 +81,26 @@ void BinaryInstruction::output() const
     type = operands[0]->getType()->toStr();
     switch (opcode)
     {
-    case ADD:
-        op = "add";
-        break;
-    case SUB:
-        op = "sub";
-        break;
-    default:
-        break;
+        case ADD:
+            op = "add";
+            break;
+        case SUB:
+            op = "sub";
+            break;
+        case MUL:
+            op = "mul";
+            break;
+        case DIV:
+            op = "sdiv";
+            break;
+        case MOD:
+            op = "srem";
+            break;
+        case XOR:
+            op = "xor";
+            break;
+        default:
+            break;
     }
     fprintf(yyout, "  %s = %s %s %s, %s\n", s1.c_str(), op.c_str(), type.c_str(), s2.c_str(), s3.c_str());
 }
@@ -310,4 +322,72 @@ void StoreInstruction::output() const
     std::string src_type = operands[1]->getType()->toStr();
 
     fprintf(yyout, "  store %s %s, %s %s, align 4\n", src_type.c_str(), src.c_str(), dst_type.c_str(), dst.c_str());
+}
+
+CallInstruction::CallInstruction(Operand *dst, std::vector<Operand*> &params, SymbolEntry*se, BasicBlock *insert_bb) : Instruction(CALL, insert_bb)
+{
+    this->se = se;
+    this->opcode = opcode;
+    operands.push_back(dst);
+    operands.insert(operands.end(), params.begin(), params.end());
+    if(dst != nullptr)
+        dst->setDef(this);
+    for(auto &use:params)
+        use->addUse(this);
+}
+
+CallInstruction::~CallInstruction() 
+{
+    if(operands[0] != nullptr)
+        operands[0]->setDef(nullptr);
+    for (size_t i = 1; i < operands.size(); i++)
+    {
+        auto operand = operands[i];
+        operand->removeUse(this);
+    }
+}
+
+void CallInstruction::output() const
+{
+    fprintf(yyout, "  ");
+    if (operands[0] != nullptr)
+    {
+        std::string str = operands[0]->toStr();
+        fprintf(yyout, "%s = ", str.c_str());
+    }
+    FunctionType* funcType = dynamic_cast<FunctionType*>(se->getType());
+    Type *retType = funcType->getRetType();
+    fprintf(yyout, "call %s %s", retType->toStr().c_str(), se->toStr().c_str());
+    if (operands.size() == 1)
+        fprintf(yyout, "()\n");
+    else
+    {
+        std::string s;
+        s = operands[1]->toStr();
+        fprintf(yyout, "(%s %s", operands[1]->getType()->toStr().c_str(), s.c_str());
+        for (size_t i = 2; i < operands.size(); i++)
+        {
+            s = operands[i]->toStr();
+            fprintf(yyout, ", %s %s", operands[i]->getType()->toStr().c_str(), s.c_str());
+        }
+        fprintf(yyout, ")\n");
+    }
+}
+
+ExtInstruction::ExtInstruction(Operand *dst, Operand *src, BasicBlock *insert_bb) : Instruction(EXT, insert_bb)
+{
+    operands.push_back(dst);
+    operands.push_back(src);
+    dst->setDef(this);
+    src->addUse(this);
+}
+
+void ExtInstruction::output() const
+{
+    std::string dst, src, dst_type, src_type;
+    dst = operands[0]->toStr();
+    src = operands[1]->toStr();
+    dst_type = operands[0]->getType()->toStr();
+    src_type = operands[1]->getType()->toStr();
+    fprintf(yyout, "  %s = zext %s %s to %s\n", dst.c_str(), src_type.c_str(), src.c_str(), dst_type.c_str());
 }

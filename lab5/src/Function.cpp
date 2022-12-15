@@ -9,7 +9,7 @@ Function::Function(Unit *u, SymbolEntry *s)
 {
     u->insertFunc(this);
     entry = new BasicBlock(this);
-    exit=new BasicBlock(this);
+    exit=nullptr;
     sym_ptr = s;
     parent = u;
 }
@@ -32,7 +32,23 @@ void Function::output() const
 {
     FunctionType* funcType = dynamic_cast<FunctionType*>(sym_ptr->getType());
     Type *retType = funcType->getRetType();
-    fprintf(yyout, "define %s %s() {\n", retType->toStr().c_str(), sym_ptr->toStr().c_str());
+    std::vector<SymbolEntry*> &paramsSymbolEntry=funcType->paramsSymbolEntry;
+    if(paramsSymbolEntry.empty())
+        fprintf(yyout, "define %s %s() {\n", retType->toStr().c_str(), sym_ptr->toStr().c_str());
+    else
+    {
+        std::string name, type;
+        name = paramsSymbolEntry[0]->toStr();
+        type = paramsSymbolEntry[0]->getType()->toStr();
+        fprintf(yyout, "define %s %s(%s %s", retType->toStr().c_str(), sym_ptr->toStr().c_str(), type.c_str(), name.c_str());
+        for (size_t i = 1; i < paramsSymbolEntry.size(); i++)
+        {
+            name = paramsSymbolEntry[i]->toStr();
+            type = paramsSymbolEntry[i]->getType()->toStr();
+            fprintf(yyout, ", %s %s", type.c_str(), name.c_str());
+        }
+        fprintf(yyout, ") {\n");
+    }
     std::set<BasicBlock *> v;
     std::list<BasicBlock *> q;
     q.push_back(entry);
@@ -53,3 +69,4 @@ void Function::output() const
     }
     fprintf(yyout, "}\n");
 }
+

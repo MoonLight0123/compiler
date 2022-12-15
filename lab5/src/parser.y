@@ -9,6 +9,7 @@
     Type *basicDeclType;
     Type *funcDeclType;
     std::vector<Type*> FuncFParamsTypeVector;
+    std::vector<SymbolEntry*> FuncFParamsSymbolEntryVector;
 }
 
 %code requires {
@@ -163,6 +164,9 @@ ReturnStmt
     RETURN Exp SEMICOLON{
         $$ = new ReturnStmt($2);
     }
+    | RETURN SEMICOLON {
+        $$=new ReturnStmt(nullptr);
+    }
     ;
 WhileStmt
     :
@@ -207,6 +211,10 @@ PrimaryExp
     | 
     INTEGER {
         SymbolEntry *se = new ConstantSymbolEntry(TypeSystem::intType, $1);
+        $$ = new Constant(se);
+    }
+    |FLOATNUM{
+        SymbolEntry *se = new ConstantSymbolEntry(TypeSystem::floatType, $1);
         $$ = new Constant(se);
     }
     |
@@ -255,9 +263,9 @@ UnaryExp
     }
     |
     ID LPAREN FuncRParams RPAREN {
-        SymbolEntry *see=new TemporarySymbolEntry(TypeSystem::intType,SymbolTable::getLabel());
         SymbolEntry *se;
         se = identifiers->lookup($1);
+        SymbolEntry *see=new TemporarySymbolEntry((FunctionType*)se->getType(),SymbolTable::getLabel());
         if(se == nullptr)
         {
             fprintf(stderr, "Function \"%s\" is undefined\n", (char*)$1);
@@ -279,8 +287,8 @@ FuncRParams
     Exp {$$=$1;}
     |
     FuncRParams COMMA Exp {
-        SymbolEntry *se=new TemporarySymbolEntry(TypeSystem::intType,SymbolTable::getLabel());
-        $$=new FuncRParam(se,$1,$3);
+        //SymbolEntry *se=new TemporarySymbolEntry(TypeSystem::intType,SymbolTable::getLabel());
+        $$=new FuncRParam(nullptr,$1,$3);
     }
     
 //加减表达式 AddExp → MulExp | AddExp ('+' | '−') MulExp
@@ -428,6 +436,14 @@ IdDeclList
     :
     ID ASSIGN InitVal {
         SymbolEntry *se;
+
+        se = identifiers->lookup($1);
+        if(se != nullptr)
+        {
+            fprintf(stderr, "identifier \"%s\" is defined\n", (char*)$1);
+            exit(1);
+        }
+
         se = new IdentifierSymbolEntry(basicDeclType, $1, identifiers->getLevel());
         identifiers->install($1, se);
         $$ = new DeclInitStmt(new Id(se),$3);
@@ -435,6 +451,12 @@ IdDeclList
     }
     | ID {
         SymbolEntry *se;
+        se = identifiers->lookup($1);
+        if(se != nullptr)
+        {
+            fprintf(stderr, "identifier \"%s\" is defined\n", (char*)$1);
+            exit(1);
+        }
         se = new IdentifierSymbolEntry(basicDeclType, $1, identifiers->getLevel());
         identifiers->install($1, se);
         $$ = new DeclStmt(new Id(se));
@@ -442,6 +464,12 @@ IdDeclList
     }
     | ID ConstArrayDims {
         SymbolEntry *se;
+        se = identifiers->lookup($1);
+        if(se != nullptr)
+        {
+            fprintf(stderr, "identifier \"%s\" is defined\n", (char*)$1);
+            exit(1);
+        }
         se = new IdentifierSymbolEntry(basicDeclType, $1, identifiers->getLevel());
         identifiers->install($1, se);
         $$=new DeclArrayStmt(new Id(se),$2);
@@ -503,12 +531,12 @@ FuncDef
         FunctionType *funcType;
         funcType=new FunctionType($1,{});
         FuncFParamsTypeVector.swap(funcType->paramsType);
-
+        FuncFParamsSymbolEntryVector.swap(funcType->paramsSymbolEntry);
+        
         SymbolEntry *se;
         se = identifiers->lookup($2);
-        //IdentifierSymbolEntry* ss=(IdentifierSymbolEntry*)se;
-        //ss->setFuncType(funcType);
-        se->setType((Type*)funcType);
+        IdentifierSymbolEntry* ss=(IdentifierSymbolEntry*)se;
+        ss->setFuncType(((Type*)funcType));
     }
     BlockStmt
     {
@@ -545,6 +573,7 @@ FuncFParam
         $$ = new DeclStmt(new Id(se));
         delete []$2;
         FuncFParamsTypeVector.push_back($1);
+        FuncFParamsSymbolEntryVector.push_back(se);
     }
     |
     BType ID LBRACKET RBRACKET FuncFArrayParamDims {
@@ -554,6 +583,7 @@ FuncFParam
         $$=new FuncFArrayParam(new Id(se),$5);
         delete []$2;
         FuncFParamsTypeVector.push_back($1);
+        FuncFParamsSymbolEntryVector.push_back(se);
     }
     ;
 FuncFArrayParamDims
@@ -575,4 +605,5 @@ int yyerror(char const* message)
     std::cerr<<message<<std::endl;
     return -1;
 }
+
 

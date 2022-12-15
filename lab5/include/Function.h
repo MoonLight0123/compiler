@@ -22,8 +22,6 @@ private:
     BasicBlock *entry,*exit;
     Unit *parent;
 public:
-    std::vector<SymbolEntry*> funcParams;
-    
     Function(Unit *, SymbolEntry *);
     ~Function();
     void insertBlock(BasicBlock *bb) { block_list.push_back(bb); };
@@ -40,3 +38,4 @@ public:
 };
 
 #endif
+

@@ -44,6 +44,7 @@ public:
     Operand* getOperand() {return dst;};
     SymbolEntry* getSymPtr() {return symbolEntry;};
     virtual bool isConstantVal(int &val){return false;};
+    virtual void getFuncRparamsOperand(std::vector<Operand*> &paramsVector){paramsVector.push_back(dst);};
 };
 
 class BinaryExpr : public ExprNode
@@ -234,7 +235,7 @@ private:
     ExprNode* FuncName;
     ExprNode* FuncRParams;
 public:
-    FuncCall(SymbolEntry *se, ExprNode* FuncName,ExprNode* FuncRParams):ExprNode(se),FuncName(FuncName),FuncRParams(FuncRParams){};
+    FuncCall(SymbolEntry *se, ExprNode* FuncName,ExprNode* FuncRParams):ExprNode(se),FuncName(FuncName),FuncRParams(FuncRParams){dst=new Operand(se);};
     void output(int level);
     void typeCheck();
     void genCode();
@@ -245,10 +246,15 @@ class FuncRParam : public ExprNode
 private:
     ExprNode *param1,*param2;
 public:
-    FuncRParam(SymbolEntry *se,ExprNode *param1,ExprNode *param2):ExprNode(se),param1(param1),param2(param2){};
+    FuncRParam(SymbolEntry *se,ExprNode *param1,ExprNode *param2):ExprNode(nullptr),param1(param1),param2(param2){};
     void output(int level);
     void typeCheck();
     void genCode();
+    void getFuncRparamsOperand(std::vector<Operand*> &paramsVector)
+    {
+        param1->getFuncRparamsOperand(paramsVector);
+        param2->getFuncRparamsOperand(paramsVector);
+    }
 };
 
 class FuncFArrayParam : public StmtNode{
@@ -399,12 +405,5 @@ public:
     void typeCheck();
     void genCode(Unit *unit);
 };
-
-
-
-
-
-
-
 #endif
 

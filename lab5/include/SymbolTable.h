@@ -92,6 +92,7 @@ public:
     void setAddr(Operand *addr) {this->addr = addr;};
     Operand* getAddr() {return addr;};
     // You can add any function you need here.
+    void setFuncType(Type *t){this->type=t;};
     void setInitVal(int i){this->initVal=i;};
     int getInitVal(){return initVal;}
 };
@@ -149,3 +150,4 @@ extern SymbolTable *identifiers;
 extern SymbolTable *globals;
 
 #endif
+

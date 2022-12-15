@@ -58,19 +58,19 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     yyparse();
-    printf("1\n");
+    //printf("1\n");
     if(dump_ast){
         ast.output();
-        printf("1\n");
+        //printf("1\n");
         }
     ast.typeCheck();
-    printf("2\n");
+    //printf("2\n");
     ast.genCode(&unit);
-    printf("3\n");
+    //printf("3\n");
     if(dump_ir){
         unit.output();
-        printf("4\n");
+        //printf("4\n");
         }
-        printf("5\n");
+        //printf("5\n");
     return 0;
 }

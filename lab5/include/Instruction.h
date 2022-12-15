@@ -21,6 +21,7 @@ public:
     Instruction *getNext();
     Instruction *getPrev();
     virtual void output() const = 0;
+    std::vector<Operand*> &getOperands(){return operands;}; 
 protected:
     unsigned instType;
     unsigned opcode;
@@ -28,7 +29,7 @@ protected:
     Instruction *next;
     BasicBlock *parent;
     std::vector<Operand*> operands;
-    enum {BINARY, COND, UNCOND, RET, LOAD, STORE, CMP, ALLOCA};
+    enum {BINARY, COND, UNCOND, RET, LOAD, STORE, CMP, ALLOCA,CALL};
 };
 
 // meaningless instruction, used as the head node of the instruction list.
@@ -71,7 +72,7 @@ public:
     BinaryInstruction(unsigned opcode, Operand *dst, Operand *src1, Operand *src2, BasicBlock *insert_bb = nullptr);
     ~BinaryInstruction();
     void output() const;
-    enum {SUB, ADD, MUL,DIV,MOD,AND, OR};
+    enum {SUB, ADD, MUL,DIV,MOD,AND,OR,XOR};
 };
 
 class CmpInstruction : public Instruction
@@ -121,4 +122,21 @@ public:
     void output() const;
 };
 
+
+class CallInstruction : public Instruction
+{
+private:
+    SymbolEntry *se;
+public:
+    CallInstruction(Operand *dst, std::vector<Operand*> &operands, SymbolEntry*se, BasicBlock *insert_bb = nullptr);
+    ~CallInstruction();
+    void output() const;
+};
+
+class ExtInstruction : public Instruction
+{
+public:
+    ExtInstruction(Operand *dst, Operand *src, BasicBlock *insert_bb = nullptr);
+    void output() const;
+};
 #endif

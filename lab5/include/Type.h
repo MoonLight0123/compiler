@@ -3,6 +3,9 @@
 #include <vector>
 #include <string>
 
+class SymbolEntry;
+
+
 class Type
 {
 private:
@@ -44,7 +47,7 @@ class FunctionType : public Type
 public:
     Type *returnType;
     std::vector<Type*> paramsType;
-
+    std::vector<SymbolEntry*> paramsSymbolEntry;
     
     FunctionType(Type* returnType, std::vector<Type*> paramsType) : 
     Type(Type::FUNC), returnType(returnType), paramsType(paramsType){};
@@ -96,3 +99,4 @@ public:
 };
 
 #endif
+

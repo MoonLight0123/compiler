@@ -44,9 +44,9 @@ void FunctionDef::genCode()
     // set the insert point to the entry basicblock of this function.
     builder->setInsertBB(entry);
 
+
     if(paraStmt!=nullptr)
         paraStmt->genCode();
-
     blockStmt->genCode();
 
     /**
@@ -82,8 +82,9 @@ void FunctionDef::genCode()
             succ->addPred(block);
         }
    }
-   builder->setInsertBB(exit);
    
+   exit=new BasicBlock(func);
+   //builder->setInsertBB(exit);//end block?
 }
 
 void BinaryExpr::genCode()
@@ -295,6 +296,18 @@ void DeclStmt::genCode()
 void ReturnStmt::genCode()
 {
     // Todo
+    BasicBlock *bb=builder->getInsertBB();
+    Function *func=bb->getParent();
+    BasicBlock *nextBB=new BasicBlock(func);
+    Operand *src=nullptr;
+    if(retValue!=nullptr)
+    {
+        retValue->genCode();
+        src=retValue->getOperand();
+    }
+    new RetInstruction(src,bb);
+
+    builder->setInsertBB(nextBB);
 }
 
 void AssignStmt::genCode()
@@ -726,7 +739,38 @@ void UnaryExpr::typeCheck()
 }
 void UnaryExpr::genCode()
 {
-
+    bool isGenBranch=builder->getIsGenBranch();
+    expr->genCode();
+    if(op==SUB)
+    {
+        if(isGenBranch)
+        {
+            true_list=expr->trueList();
+            false_list=expr->falseList();
+        }
+        else
+        {
+            BasicBlock *bb=builder->getInsertBB();
+            SymbolEntry *se=new ConstantSymbolEntry(expr->getSymPtr()->getType(),0);
+            Operand *zero=new Operand(se);
+            new BinaryInstruction(BinaryInstruction::SUB,dst,zero,expr->getOperand(),bb);
+        }
+    }
+    else if(op==NOT)
+    {
+        if(isGenBranch)
+        {
+            true_list=expr->falseList();
+            false_list=expr->trueList();
+        }
+        else
+        {
+            BasicBlock *bb=builder->getInsertBB();
+            SymbolEntry *se=new ConstantSymbolEntry(TypeSystem::boolType,1);
+            Operand *one=new Operand(se);
+            new BinaryInstruction(BinaryInstruction::XOR,dst,one,expr->getOperand(),bb);
+        }
+    }
 }
 bool UnaryExpr::isConstantVal(int &val)
 {
@@ -784,7 +828,15 @@ void FuncCall::typeCheck()
 }
 void FuncCall::genCode()
 {
-    
+    if(FuncRParams!=nullptr)
+        FuncRParams->genCode();
+    std::vector<Operand*> params;
+    if(FuncRParams!=nullptr)
+        FuncRParams->getFuncRparamsOperand(params);
+    BasicBlock *bb=builder->getInsertBB();
+    new CallInstruction(dst,params,FuncName->getSymPtr(),bb);
+    //    params.push_back(FuncRParams->getOperand());
+    //BasicBlock *bb=builder->getInsertBB();
 }
 
 
@@ -800,7 +852,8 @@ void FuncRParam::typeCheck()
 }
 void FuncRParam::genCode()
 {
-    
+    param1->genCode();
+    param2->genCode();
 }
 
 void FuncFArrayParam::output(int level)
@@ -829,7 +882,7 @@ void EmptyStmt::typeCheck()
 }
 void EmptyStmt::genCode()
 {
-    
+    //
 }
 
 void ExprStmt::output(int level)
@@ -844,7 +897,7 @@ void ExprStmt::typeCheck()
 }
 void ExprStmt::genCode()
 {
-    
+    exp->genCode();
 }
 
 void FuncFParam::output(int level)
@@ -859,7 +912,8 @@ void FuncFParam::typeCheck()
 }
 void FuncFParam::genCode()
 {
-    
+    param1->genCode();
+    param2->genCode();
 }
 
 void DeclArrayStmt::output(int level)
@@ -926,7 +980,15 @@ void DeclInitStmt::typeCheck()
 }
 void DeclInitStmt::genCode()
 {
-    
+    this->DeclStmt::genCode();
+    IdentifierSymbolEntry *se = dynamic_cast<IdentifierSymbolEntry *>(id->getSymPtr());
+    if(se->isLocal())
+    {
+        BasicBlock *bb=builder->getInsertBB();
+        initVal->genCode();
+        Operand *src=initVal->getOperand();
+        new StoreInstruction(se->getAddr(),src,bb);
+    }
 }
 
 void ConstDeclInitStmt::output(int level)
@@ -949,7 +1011,15 @@ void ConstDeclInitStmt::typeCheck()
 }
 void ConstDeclInitStmt::genCode()
 {
-    
+    this->DeclStmt::genCode();
+    IdentifierSymbolEntry *se = dynamic_cast<IdentifierSymbolEntry *>(id->getSymPtr());
+    if(se->isLocal())
+    {
+        BasicBlock *bb=builder->getInsertBB();
+        initVal->genCode();
+        Operand *src=initVal->getOperand();
+        new StoreInstruction(se->getAddr(),src,bb);
+    }
 }
 
 void DeclList::output(int level)
@@ -965,7 +1035,8 @@ void DeclList::typeCheck()
 }
 void DeclList::genCode()
 {
-    
+    decl1->genCode();
+    decl2->genCode();
 }
 
 void ConstDeclList::output(int level)
@@ -981,7 +1052,8 @@ void ConstDeclList::typeCheck()
 }
 void ConstDeclList::genCode()
 {
-    
+    decl1->genCode();
+    decl2->genCode();
 }
 
 void ContinueStmt::output(int level)
@@ -994,7 +1066,7 @@ void ContinueStmt::typeCheck()
 }
 void ContinueStmt::genCode()
 {
-    
+    //
 }
 
 void BreakStmt::output(int level)
@@ -1007,7 +1079,7 @@ void BreakStmt::typeCheck()
 }
 void BreakStmt::genCode()
 {
-    
+    //
 }
 
 void Extend::output(int level)
@@ -1024,4 +1096,7 @@ void Extend::genCode()
     // originNode->genCode();
     // BasicBlock *nowBB=builder->getInsertBB();
     //符号拓展语句？
+    originNode->genCode();
+    BasicBlock *bb=builder->getInsertBB();
+    
 }
