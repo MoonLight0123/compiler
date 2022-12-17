@@ -353,6 +353,9 @@ void CallInstruction::output() const
     if (operands[0] != nullptr)
     {
         std::string str = operands[0]->toStr();
+        FunctionType* func=(FunctionType*)operands[0]->getType();
+        
+        if(func->getRetType()!=TypeSystem::voidType)
         fprintf(yyout, "%s = ", str.c_str());
     }
     FunctionType* funcType = dynamic_cast<FunctionType*>(se->getType());

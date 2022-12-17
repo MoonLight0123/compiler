@@ -31,13 +31,14 @@ std::string FloatType::toStr()
 std::string FunctionType::toStr()
 {
     std::ostringstream buffer;
-    buffer << returnType->toStr() << "() ParamType: ";
-   int j=paramsType.size();
-    for(int i=0;i<j;i++){
-        if(paramsType[i]->isInt()){
-            buffer <<"int"<<" ";
-        }
-    }
+//     buffer << returnType->toStr() << "() ParamType: ";
+//    int j=paramsType.size();
+//     for(int i=0;i<j;i++){
+//         if(paramsType[i]->isInt()){
+//             buffer <<"int"<<" ";
+//         }
+//     }
+    buffer << returnType->toStr();
     return buffer.str();
 }
 

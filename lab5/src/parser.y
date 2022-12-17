@@ -262,6 +262,7 @@ UnaryExp
         $$=new UnaryExpr(se,UnaryExpr::NOT,$2);
     }
     |
+    //funccall
     ID LPAREN FuncRParams RPAREN {
         SymbolEntry *se;
         se = identifiers->lookup($1);

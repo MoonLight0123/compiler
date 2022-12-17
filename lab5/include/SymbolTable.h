@@ -3,6 +3,9 @@
 
 #include <string>
 #include <map>
+#include <cassert>
+
+#include "Type.h"
 
 class Type;
 class Operand;
@@ -12,11 +15,10 @@ class SymbolEntry
 {
 private:
     int kind;
-protected:
+public:
     enum {CONSTANT, VARIABLE, TEMPORARY};
     Type *type;
 
-public:
     SymbolEntry(Type *type, int kind);
     virtual ~SymbolEntry() {};
     bool isConstant() const {return kind == CONSTANT;};
@@ -74,14 +76,14 @@ public:
 */
 class IdentifierSymbolEntry : public SymbolEntry
 {
-private:
+public:
     enum {GLOBAL, PARAM, LOCAL};
     std::string name;
     int scope;
     Operand *addr;  // The address of the identifier.
     // You can add any field you need here.
     int initVal;
-public:
+
     IdentifierSymbolEntry(Type *type, std::string name, int scope);
     virtual ~IdentifierSymbolEntry() {};
     std::string toStr();
@@ -92,9 +94,12 @@ public:
     void setAddr(Operand *addr) {this->addr = addr;};
     Operand* getAddr() {return addr;};
     // You can add any function you need here.
+    void outputSysFunc();
     void setFuncType(Type *t){this->type=t;};
-    void setInitVal(int i){this->initVal=i;};
+    void setInitVal(int i){this->initVal=i;haveInitVal=true;};
     int getInitVal(){return initVal;}
+
+    bool haveInitVal;
 };
 
 
@@ -125,6 +130,8 @@ public:
     virtual ~TemporarySymbolEntry() {};
     std::string toStr();
     int getLabel() const {return label;};
+    int getTemporySymbolEntryLabel(){return label;};
+    void setLabel(int label){this->label=label;};
     // You can add any function you need here.
 };
 
@@ -143,6 +150,7 @@ public:
     SymbolEntry* lookup(std::string name);
     SymbolTable* getPrev() {return prev;};
     int getLevel() {return level;};
+    void installFunc(std::string name, SymbolEntry* entry);
     static int getLabel() {return counter++;};
 };
 

@@ -10,6 +10,15 @@ extern FILE *yyout;
 int Node::counter = 0;
 IRBuilder* Node::builder = nullptr;
 
+struct s1
+{
+    bool inWhile=0;
+    bool inFunc=0;
+    
+    Type * funcret;
+    
+    
+}flag;
 Node::Node()
 {
     seq = counter++;
@@ -275,6 +284,14 @@ void DeclStmt::genCode()
         addr_se->setType(new PointerType(se->getType()));
         addr = new Operand(addr_se);
         se->setAddr(addr);
+        //BasicBlock *bb=builder->getInsertBB();
+        //new GlobalInitInstruction(new Operand(se),bb);
+        int initVal=se->getInitVal();
+        bool haveInitVal=se->haveInitVal;
+        if(haveInitVal)
+            fprintf(yyout, "@%s = global %s %d, align 4 \n",se->name.c_str(), se->type->toStr().c_str(),initVal);
+        else
+            fprintf(yyout, "@%s = global %s 0, align 4 \n", se->name.c_str(), se->type->toStr().c_str());
     }
     else if(se->isLocal())
     {
@@ -288,9 +305,27 @@ void DeclStmt::genCode()
         addr_se = new TemporarySymbolEntry(type, SymbolTable::getLabel());
         addr = new Operand(addr_se);
         alloca = new AllocaInstruction(addr, se);                   // allocate space for local id in function stack.
-        entry->insertFront(alloca);                                 // allocate instructions should be inserted into the begin of the entry block.
+        entry->insertFront(alloca);                             // allocate instructions should be inserted into the begin of the entry block.
         se->setAddr(addr);                                          // set the addr operand in symbol entry so that we can use it in subsequent code generation.
     }
+    else if(se->isParam())
+    {
+        
+        BasicBlock *bb=builder->getInsertBB();
+        SymbolEntry *i32addr_se;
+        Operand *i32addr;
+        i32addr_se=new TemporarySymbolEntry(se->getType(),SymbolTable::getLabel());
+        i32addr=new Operand(i32addr_se);
+        new AllocaInstruction(i32addr,i32addr_se,bb);
+        SymbolEntry *ad=new IdentifierSymbolEntry(*se);
+
+        SymbolEntry* i32ptrse=new TemporarySymbolEntry(new PointerType(se->getType()),((TemporarySymbolEntry*)i32addr_se)->getTemporySymbolEntryLabel());
+        
+        Operand* i32ptr=new Operand(i32ptrse);
+        new StoreInstruction(i32ptr,new Operand(ad),bb);
+        se->setAddr(i32ptr);
+    }
+
 }
 
 void ReturnStmt::genCode()
@@ -323,6 +358,9 @@ void AssignStmt::genCode()
     new StoreInstruction(addr, src, bb);
 }
 
+/*************************************************************************************/
+/***********************************typecheck*****************************************/
+
 void Ast::typeCheck()
 {
     if(root != nullptr)
@@ -331,9 +369,15 @@ void Ast::typeCheck()
 
 void FunctionDef::typeCheck()
 {
+    flag.inFunc=1;
     if(paraStmt!=nullptr)
         paraStmt->typeCheck();
+
+    flag.funcret=((FunctionType*)(se->getType()))->getRetType();
+    
     blockStmt->typeCheck();
+
+    flag.inFunc=0;
     // Todo
 }
 
@@ -342,45 +386,84 @@ void BinaryExpr::typeCheck()
     expr1->typeCheck();
     expr2->typeCheck();
     // Todo
+
     Type *type1=expr1->getSymPtr()->getType();
     Type *type2=expr2->getSymPtr()->getType();
+    /*
     if(!type1->isInt()||!type2->isInt()){
         printf("error type!\n");
         exit(-1);
     }
+    */
+   //printf("type1: %s   type2: %s\n",type1->toStr().c_str(),type2->toStr().c_str());
+
+    if(type1->isFunc()){
+        
+        FunctionType* fun =(FunctionType*)type1;
+        type1=fun->getRetType();
+
+    }
+        if(type2->isFunc()){
+        
+        FunctionType* fun =(FunctionType*)type2;
+        type2=fun->getRetType();
+
+    }
+    
+
+
+    if(type1==TypeSystem::voidType ||type1==TypeSystem::voidType){
+
+        printf("binaryexpr exit void \n");
+        exit(1);
+    }
+
     IntType *t1=(IntType*)type1;
     IntType *t2=(IntType*)type2;
+
     if(op>=ADD&&op<=MOD)
     {
-        if(t1!=t2)
+            if(!type1->isInt()||!type2->isInt()){
+                printf("error type! exit no int\n");
+                exit(-1);
+            }
+
+        if(type1!=type2)
         {
+
+            IntType *t1=(IntType*)type1;
+            IntType *t2=(IntType*)type2;
+
+            printf("type1: %s type2: %s mismatch \n",type1->toStr().c_str(),type2->toStr().c_str());
             if(t1->getSize()>t2->getSize())
             {
-                SymbolEntry *se=new TemporarySymbolEntry(type2,SymbolTable::getLabel());
+                SymbolEntry *se=new TemporarySymbolEntry(type1,SymbolTable::getLabel());
                 expr2=new Extend(se,expr2);
+                symbolEntry->setType(type1);
             }
             else
             {
                 SymbolEntry *se=new TemporarySymbolEntry(type2,SymbolTable::getLabel());
                 expr1=new Extend(se,expr1);
+                 symbolEntry->setType(type2);
             }
         }
-        if(t1->getSize()>t2->getSize())
-        {
-            symbolEntry->setType(type1);
-        }
-        else
-        {
-            symbolEntry->setType(type2);
-        }
+
     }
     else if(op>=EQUAL&&op<=GREATEREQUAL)
     {
+         if(!type1->isInt()||!type2->isInt()){
+                printf("error type! exit no int\n");
+                exit(-1);
+            }
         if(t1!=t2)
         {
+            IntType *t1=(IntType*)type1;
+            IntType *t2=(IntType*)type2;
+
             if(t1->getSize()>t2->getSize())
             {
-                SymbolEntry *se=new TemporarySymbolEntry(type2,SymbolTable::getLabel());
+                SymbolEntry *se=new TemporarySymbolEntry(type1,SymbolTable::getLabel());
                 expr2=new Extend(se,expr2);
             }
             else
@@ -395,6 +478,7 @@ void BinaryExpr::typeCheck()
     {
         if(!t1->isBool())
         {
+            printf("type is not bool and turn to bool\n");
             SymbolEntry *se=new ConstantSymbolEntry(t1,0);
             Constant *zero=new Constant(se);
             SymbolEntry *sse=new TemporarySymbolEntry(TypeSystem::boolType,SymbolTable::getLabel());
@@ -402,11 +486,13 @@ void BinaryExpr::typeCheck()
         }
         if(!t2->isBool())
         {
+            printf("type is not bool and turn to bool\n");
             SymbolEntry *se=new ConstantSymbolEntry(t2,0);
             Constant *zero=new Constant(se);
             SymbolEntry *sse=new TemporarySymbolEntry(TypeSystem::boolType,SymbolTable::getLabel());
             expr2=new BinaryExpr(sse,BinaryExpr::NOTEQUAL,expr2,zero);
         }
+        symbolEntry->setType(TypeSystem::boolType);
     }
 }
 
@@ -475,6 +561,21 @@ void DeclStmt::typeCheck()
 {
     // Todo
     IdentifierSymbolEntry *idse=(IdentifierSymbolEntry*)id->getSymPtr();
+
+    /*
+    SymbolEntry *se=globals->lookup(idse->toStr());
+    //std::cout<<idse->toStr();
+    if(se!=nullptr){
+
+        std::cout<<idse->toStr()<<"sdsd"<<std::endl;
+    }
+    //printf("%d\n",identifiers->ifExitInLevel(idse->toStr()));
+    if(globals->ifExitInLevel(idse->toStr(),0)){
+
+        printf("exit  this id in the level\n");
+    }
+    */
+
     if(idse->isGlobal())
         idse->setInitVal(0);
 }
@@ -482,6 +583,33 @@ void DeclStmt::typeCheck()
 void ReturnStmt::typeCheck()
 {
     // Todo
+    //retValue->getSymPtr()->getType()
+    if(!flag.inFunc){
+
+        printf("return not in func\n");
+        exit(1);
+    }
+    if(flag.funcret== TypeSystem::voidType){
+        printf("void return  func have other ret\n");
+        exit(1);
+
+    }
+    else {
+
+        if(retValue->getSymPtr()->getType()->isFunc()){
+        FunctionType* fun =(FunctionType*)retValue->getSymPtr()->getType();
+        Type * ret=fun->getRetType();
+        if(!retValue ||ret!=flag.funcret){
+        printf(" return  mismatch func ret\n");
+        //exit(1);
+        }
+        }
+        if(!retValue || retValue->getSymPtr()->getType()!=flag.funcret){
+        printf(" return  mismatch\n");
+        //exit(1);
+        }
+    }
+
     if(retValue!=nullptr)
         retValue->typeCheck();
 }
@@ -491,7 +619,206 @@ void AssignStmt::typeCheck()
     // Todo
     lval->typeCheck();
     expr->typeCheck();
+
+    Type* type1 = this->lval->getSymPtr()->getType();
+    Type* type2 = this->expr->getSymPtr()->getType();
+
+    if(type1->isFunc()){
+        
+        FunctionType* fun =(FunctionType*)type1;
+        type1=fun->getRetType();
+
+    }
+        if(type2->isFunc()){
+        
+        FunctionType* fun =(FunctionType*)type2;
+        type2=fun->getRetType();
+
+    }
+    if(type1 != type2){
+        printf(
+            "cannot assign object of type \'%s\' with an rvalue "
+            "of type \'%s\'\n",
+            type1->toStr().c_str(), type2->toStr().c_str());
+        exit(EXIT_FAILURE);
+    }
+
+
 }
+
+void WhileStmt::typeCheck()
+{
+    flag.inWhile=1;
+    cond->typeCheck();
+    whileStmt->typeCheck();
+    flag.inWhile=0;
+    IntType *t=(IntType*)cond->getSymPtr()->getType();
+    if(!t->isBool())
+    {
+        printf("while cond is not bool\n");
+        
+        SymbolEntry *se=new ConstantSymbolEntry(t,0);
+        Constant *zero=new Constant(se);
+        SymbolEntry *sse=new TemporarySymbolEntry(TypeSystem::boolType,SymbolTable::getLabel());
+        cond=new BinaryExpr(sse,BinaryExpr::NOTEQUAL,cond,zero);
+        
+    }
+}
+
+void UnaryExpr::typeCheck()
+{
+    
+    expr->typeCheck();
+    IntType *type = (IntType *)expr->getSymPtr()->getType();
+    //printf("1111111\n");
+    if(op == NOT)
+    {
+        //printf("sdasdasd\n");
+        if(!type->isBool())
+        {
+            printf("not unary not bool\n");
+            SymbolEntry *se = new ConstantSymbolEntry(type, 0);
+            Constant *zero = new Constant(se);
+            expr = new BinaryExpr(new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel()), BinaryExpr::NOTEQUAL, expr, zero);
+            //Type *type = (Type *)expr->getSymPtr()->getType();
+            symbolEntry->setType(TypeSystem::boolType);
+            //type=TypeSystem::boolType;
+            
+        }
+        symbolEntry->setType(TypeSystem::boolType);
+
+    }
+    else if(op == SUB)
+    {
+        if(!type->isInt())
+        {
+            printf("sub unary not int\n");
+            expr = new Extend(new TemporarySymbolEntry(TypeSystem::intType ,SymbolTable::getLabel()), expr);
+            symbolEntry->setType(TypeSystem::intType);
+            //Type *type = (Type *)expr->getSymPtr()->getType();
+            //type=TypeSystem::intType;
+        }
+    }
+    else if(op == ADD)
+    {
+        if(!type->isInt())
+        {
+            printf("sub unary not int\n");
+            expr = new Extend(new TemporarySymbolEntry(TypeSystem::intType ,SymbolTable::getLabel()), expr);
+            symbolEntry->setType(TypeSystem::intType);
+            //Type *type = (Type *)expr->getSymPtr()->getType();
+            //type=TypeSystem::intType;
+        }
+    }
+    
+}
+void ArrayElement::typeCheck()
+{
+    //dimValList->typeCheck();
+}
+
+void FuncCall::typeCheck()
+{
+  
+
+
+}
+void FuncRParam::typeCheck()
+{
+
+}
+void FuncFArrayParam::typeCheck()
+{
+    
+}
+void EmptyStmt::typeCheck()
+{
+    //
+}
+void ExprStmt::typeCheck()
+{
+    
+    exp->typeCheck();
+}
+void FuncFParam::typeCheck()
+{
+
+}
+void DeclArrayStmt::typeCheck()
+{
+
+}
+void ArrayDims::typeCheck()
+{
+
+}
+void ArrayDim::typeCheck()
+{
+
+}
+void DeclInitStmt::typeCheck()
+{
+    IdentifierSymbolEntry *idse=(IdentifierSymbolEntry*)id->getSymPtr();
+    if(idse->isGlobal())
+    {
+        int val;
+        if(initVal->isConstantVal(val))
+        {
+            idse->setInitVal(val);
+        }
+    }
+}
+void ConstDeclInitStmt::typeCheck()
+{
+    IdentifierSymbolEntry *idse=(IdentifierSymbolEntry*)id->getSymPtr();
+    int val;
+    //if(idse->isGlobal())
+        if(!initVal->isConstantVal(val))
+        {
+            printf("constant with wrong init value!\n");
+            exit(-1);
+        }
+    idse->setInitVal(val);
+}
+void DeclList::typeCheck()
+{
+    decl1->typeCheck();
+    decl2->typeCheck();
+}
+void ConstDeclList::typeCheck()
+{
+    decl1->typeCheck();
+    decl2->typeCheck();
+}
+void ContinueStmt::typeCheck()
+{
+    //
+    if(!flag.inWhile){
+
+        printf("continue not in while\n");
+    }
+}
+
+void BreakStmt::typeCheck()
+{
+    //
+        if(!flag.inWhile){
+
+        printf("break not in while\n");
+    }
+}
+
+void Extend::typeCheck()
+{
+    //
+}
+
+
+
+/*********************************************************************************************************/
+
+
+
 
 void BinaryExpr::output(int level)
 {
@@ -672,19 +999,7 @@ void WhileStmt::output(int level)
     cond->output(level + 4);
     whileStmt->output(level + 4);
 }
-void WhileStmt::typeCheck()
-{
-    cond->typeCheck();
-    whileStmt->typeCheck();
-    IntType *t=(IntType*)cond->getSymPtr()->getType();
-    if(!t->isBool())
-    {
-        SymbolEntry *se=new ConstantSymbolEntry(t,0);
-        Constant *zero=new Constant(se);
-        SymbolEntry *sse=new TemporarySymbolEntry(TypeSystem::boolType,SymbolTable::getLabel());
-        cond=new BinaryExpr(sse,BinaryExpr::NOTEQUAL,cond,zero);
-    }
-}
+
 
 void WhileStmt::genCode()
 {
@@ -733,10 +1048,7 @@ void UnaryExpr::output(int level)
     fprintf(yyout, "%*cUnaryExpr\top: %s\n", level, ' ', op_str.c_str());
     expr->output(level + 4);
 }
-void UnaryExpr::typeCheck()
-{
-    //
-}
+
 void UnaryExpr::genCode()
 {
     bool isGenBranch=builder->getIsGenBranch();
@@ -756,6 +1068,22 @@ void UnaryExpr::genCode()
             new BinaryInstruction(BinaryInstruction::SUB,dst,zero,expr->getOperand(),bb);
         }
     }
+    else if(op==ADD)
+    {
+        if(isGenBranch)
+        {
+            true_list=expr->trueList();
+            false_list=expr->falseList();
+        }
+        else
+        {
+            BasicBlock *bb=builder->getInsertBB();
+            SymbolEntry *se=new ConstantSymbolEntry(expr->getSymPtr()->getType(),0);
+            Operand *zero=new Operand(se);
+            new BinaryInstruction(BinaryInstruction::ADD,dst,zero,expr->getOperand(),bb);
+        }
+    }
+
     else if(op==NOT)
     {
         if(isGenBranch)
@@ -803,10 +1131,7 @@ void ArrayElement::output(int level)
             name.c_str(), scope, type.c_str());
     dimValList->output(level+4);
 }
-void ArrayElement::typeCheck()
-{
-    dimValList->typeCheck();
-}
+
 void ArrayElement::genCode()
 {
     
@@ -822,10 +1147,7 @@ void FuncCall::output(int level)
     if(FuncRParams!=nullptr)
         FuncRParams->output(level+4);
 }
-void FuncCall::typeCheck()
-{
 
-}
 void FuncCall::genCode()
 {
     if(FuncRParams!=nullptr)
@@ -846,10 +1168,7 @@ void FuncRParam::output(int level)
     param1->output(level + 4);
     param2->output(level + 4);
 }
-void FuncRParam::typeCheck()
-{
 
-}
 void FuncRParam::genCode()
 {
     param1->genCode();
@@ -863,10 +1182,7 @@ void FuncFArrayParam::output(int level)
     if(arrayDim!=nullptr)
         arrayDim->output(level+4);
 }
-void FuncFArrayParam::typeCheck()
-{
-    
-}
+
 void FuncFArrayParam::genCode()
 {
     
@@ -876,10 +1192,7 @@ void EmptyStmt::output(int level)
 {
     //fprintf(yyout, "%*cEmptyStmt\n", level, ' ');
 }
-void EmptyStmt::typeCheck()
-{
-    //
-}
+
 void EmptyStmt::genCode()
 {
     //
@@ -891,10 +1204,7 @@ void ExprStmt::output(int level)
     exp->output(level + 4);
 
 }
-void ExprStmt::typeCheck()
-{
-    exp->typeCheck();
-}
+
 void ExprStmt::genCode()
 {
     exp->genCode();
@@ -906,10 +1216,7 @@ void FuncFParam::output(int level)
     param1->output(level+4);
     param2->output(level+4);
 }
-void FuncFParam::typeCheck()
-{
 
-}
 void FuncFParam::genCode()
 {
     param1->genCode();
@@ -922,10 +1229,7 @@ void DeclArrayStmt::output(int level)
     pointer->output(level+4);
     arrayDim->output(level+4);
 }
-void DeclArrayStmt::typeCheck()
-{
 
-}
 void DeclArrayStmt::genCode()
 {
     
@@ -937,10 +1241,7 @@ void ArrayDims::output(int level)
     dim1->output(level+4);
     dim2->output(level+4);
 }
-void ArrayDims::typeCheck()
-{
 
-}
 void ArrayDims::genCode()
 {
     
@@ -951,10 +1252,7 @@ void ArrayDim::output(int level)
     fprintf(yyout, "%*cArrayDimVal\n", level, ' ');
     dimVal->output(level+4);
 }
-void ArrayDim::typeCheck()
-{
 
-}
 void ArrayDim::genCode()
 {
     
@@ -966,18 +1264,7 @@ void DeclInitStmt::output(int level)
     id->output(level + 4);
     initVal->output(level+4);
 }
-void DeclInitStmt::typeCheck()
-{
-    IdentifierSymbolEntry *idse=(IdentifierSymbolEntry*)id->getSymPtr();
-    if(idse->isGlobal())
-    {
-        int val;
-        if(initVal->isConstantVal(val))
-        {
-            idse->setInitVal(val);
-        }
-    }
-}
+
 void DeclInitStmt::genCode()
 {
     this->DeclStmt::genCode();
@@ -997,18 +1284,7 @@ void ConstDeclInitStmt::output(int level)
     id->output(level + 4);
     initVal->output(level+4);
 }
-void ConstDeclInitStmt::typeCheck()
-{
-    IdentifierSymbolEntry *idse=(IdentifierSymbolEntry*)id->getSymPtr();
-    int val;
-    //if(idse->isGlobal())
-        if(!initVal->isConstantVal(val))
-        {
-            printf("constant with wrong init value!\n");
-            exit(-1);
-        }
-    idse->setInitVal(val);
-}
+
 void ConstDeclInitStmt::genCode()
 {
     this->DeclStmt::genCode();
@@ -1028,11 +1304,7 @@ void DeclList::output(int level)
     decl1->output(level+4);
     decl2->output(level+4);
 }
-void DeclList::typeCheck()
-{
-    decl1->typeCheck();
-    decl2->typeCheck();
-}
+
 void DeclList::genCode()
 {
     decl1->genCode();
@@ -1045,11 +1317,7 @@ void ConstDeclList::output(int level)
     decl1->output(level+4);
     decl2->output(level+4);
 }
-void ConstDeclList::typeCheck()
-{
-    decl1->typeCheck();
-    decl2->typeCheck();
-}
+
 void ConstDeclList::genCode()
 {
     decl1->genCode();
@@ -1060,10 +1328,7 @@ void ContinueStmt::output(int level)
 {
     fprintf(yyout, "%*cContinueStmt\n", level, ' ');
 }
-void ContinueStmt::typeCheck()
-{
-    //
-}
+
 void ContinueStmt::genCode()
 {
     //
@@ -1073,13 +1338,10 @@ void BreakStmt::output(int level)
 {
     fprintf(yyout, "%*cBreakStmt\n", level, ' ');
 }
-void BreakStmt::typeCheck()
-{
-    //
-}
+
 void BreakStmt::genCode()
 {
-    //
+
 }
 
 void Extend::output(int level)
@@ -1087,10 +1349,7 @@ void Extend::output(int level)
     fprintf(yyout, "%*cExtendNode\n", level, ' ');
     originNode->output(level+4);
 }
-void Extend::typeCheck()
-{
-    //
-}
+
 void Extend::genCode()
 {
     // originNode->genCode();
@@ -1098,5 +1357,5 @@ void Extend::genCode()
     //符号拓展语句？
     originNode->genCode();
     BasicBlock *bb=builder->getInsertBB();
-    
+    new ExtInstruction(dst, originNode->getOperand(), bb);
 }
