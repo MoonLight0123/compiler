@@ -89,6 +89,7 @@ void MachineOperand::output()
             fprintf(yyout, "%s", this->label.c_str());
         else
             fprintf(yyout, "addr_%s", this->label.c_str());
+        break;
     case FUNC:
         fprintf(yyout, "%s", this->label.c_str());
     default:
@@ -396,6 +397,14 @@ StackMInstrcuton::StackMInstrcuton(MachineBlock* p, int op,
             reg->setParent(this);
     }
 }
+StackMInstrcuton::StackMInstrcuton(int op, int cond)
+{
+    // TODO
+    this->type = MachineInstruction::STACK;
+    this->op = op;
+    this->cond = cond;
+    //this->use_list = src;
+}
 
 void StackMInstrcuton::output()
 {
@@ -446,6 +455,7 @@ MachineFunction::MachineFunction(MachineUnit* p, SymbolEntry* sym_ptr)
     this->parent = p; 
     this->sym_ptr = sym_ptr; 
     this->stack_size = 0;
+    funcPopInst=new StackMInstrcuton(StackMInstrcuton::POP);
 };
 
 void MachineBlock::output()
@@ -482,19 +492,26 @@ void MachineFunction::output()
     *  3. Save callee saved register
     *  4. Allocate stack space for local variable */
     //1. Save fp
-    fprintf(yyout,"\tpush {\n");
+    fprintf(yyout,"\tpush {");
     Instruction* temp=new DummyInstruction();
+    auto fp=temp->genMachineReg(11);
+    auto lr=temp->genMachineReg(14);
     for(auto &reg:saved_regs)
     {
-        temp->genMachineReg(reg)->output();
+        auto regOperand=temp->genMachineReg(reg);
+        regOperand->output();
+        funcPopInst->addUse(regOperand);
         fprintf(yyout,", ");
     }
-    fprintf(yyout,"fp, lr\n");
-
-
+    fprintf(yyout,"fp, lr}\n");
+    funcPopInst->addUse(fp);
+    funcPopInst->addUse(lr);
     fprintf(yyout,"\tmov fp sp\n");
 
     fprintf(yyout,"\tsub sp ,sp ,#%d\n",stack_size);
+
+    //funcPopInst->use_list.pop_back();
+
     // Traverse all the block in block_list to print assembly code.
     std::set<MachineBlock *> v;
     std::list<MachineBlock *> q;
@@ -515,17 +532,8 @@ void MachineFunction::output()
         }
     }
 
-    // fprintf(yyout,".L%s_END:\n",((IdentifierSymbolEntry*)this->sym_ptr)->name.c_str());
-
-    // fprintf(yyout,"\tadd sp, sp, #%d\n",stack_size);
-
-    // fprintf(yyout,"\tpop {fp,lr}\n");
-
-    // fprintf(yyout,"\tbx lr\n");
 
 
-    //for(auto iter : block_list)
-    //    iter->output();
 }
 
 void MachineUnit::PrintGlobalDecl()

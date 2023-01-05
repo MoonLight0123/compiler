@@ -691,23 +691,36 @@ void RetInstruction::genMachineCode(AsmBuilder* builder)
    auto offset=genMachineImm(builder->getFunction()->getStackSize());
    cur_inst=new BinaryMInstruction(cur_block,BinaryMInstruction::ADD,sp,sp,offset);
    cur_block->InsertInst(cur_inst);
-   bool isFirst=true;
-   for(auto &reg:builder->getFunction()->getSavedRegs())
-   {
-        auto temp=genMachineReg(reg);
-        if(isFirst)
-        {
-            cur_inst=new StackMInstrcuton(cur_block,StackMInstrcuton::POP,temp);
-            isFirst=false;
-            continue;
-        }
-        cur_inst->addUse(temp);
-   }
-   cur_inst->addUse(fp);
-   cur_inst->addUse(lr);
+
+//    if(builder->getFunction()->getSavedRegs().size()>0)
+//    {
+//         bool isFirst=true;
+//         for(auto &reg:builder->getFunction()->getSavedRegs())
+//         {
+//                 auto temp=genMachineReg(reg);
+//                 if(isFirst)
+//                 {
+//                     cur_inst=new StackMInstrcuton(cur_block,StackMInstrcuton::POP,temp);
+//                     isFirst=false;
+//                     continue;
+//                 }
+//                 cur_inst->addUse(temp);
+//         }
+//         cur_inst->addUse(fp);
+//         cur_inst->addUse(lr);
+//    }
+//    else
+//    {
+//       cur_inst=new StackMInstrcuton(cur_block,StackMInstrcuton::POP,fp);
+//       cur_inst->addUse(lr);  
+//    }
+    //cur_inst=new StackMInstrcuton(cur_block,StackMInstrcuton::POP,nullptr);//pop指令的寄存器之后回填
+    cur_inst=builder->getFunction()->funcPopInst;
+    cur_inst->setParent(cur_block);
    cur_block->InsertInst(cur_inst);
    cur_inst=new BranchMInstruction(cur_block,BranchMInstruction::BX,lr);
    cur_block->InsertInst(cur_inst);
+   //待更新//if("")//叶与非叶函数不同
 }
 
 void CallInstruction::genMachineCode(AsmBuilder* bulider)

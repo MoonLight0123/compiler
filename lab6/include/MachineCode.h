@@ -77,6 +77,7 @@ public:
     void addDef(MachineOperand* ope) { def_list.push_back(ope); };
     void addUse(MachineOperand* ope) { use_list.push_back(ope); };
     MachineBlock* getParent(){ return parent; };
+    void setParent(MachineBlock* p){parent=p;};
 };
 
 class BinaryMInstruction : public MachineInstruction
@@ -145,6 +146,7 @@ public:
     StackMInstrcuton(MachineBlock* p, int op, 
                 MachineOperand* src,
                 int cond = MachineInstruction::NONE);
+    StackMInstrcuton(int op,int cond = MachineInstruction::NONE);
     void output();
 };
 
@@ -208,6 +210,8 @@ public:
     void output();
     int getStackSize() const {return stack_size;};
     std::set<int>& getSavedRegs(){return saved_regs;};
+
+    StackMInstrcuton* funcPopInst;
 };
 
 class MachineUnit
