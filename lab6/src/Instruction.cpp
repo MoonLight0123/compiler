@@ -691,13 +691,23 @@ void RetInstruction::genMachineCode(AsmBuilder* builder)
    auto offset=genMachineImm(builder->getFunction()->getStackSize());
    cur_inst=new BinaryMInstruction(cur_block,BinaryMInstruction::ADD,sp,sp,offset);
    cur_block->InsertInst(cur_inst);
-   cur_inst=new StackMInstrcuton(cur_block,StackMInstrcuton::POP,nullptr);
+   bool isFirst=true;
+   for(auto &reg:builder->getFunction()->getSavedRegs())
+   {
+        auto temp=genMachineReg(reg);
+        if(isFirst)
+        {
+            cur_inst=new StackMInstrcuton(cur_block,StackMInstrcuton::POP,temp);
+            isFirst=false;
+            continue;
+        }
+        cur_inst->addUse(temp);
+   }
    cur_inst->addUse(fp);
    cur_inst->addUse(lr);
    cur_block->InsertInst(cur_inst);
    cur_inst=new BranchMInstruction(cur_block,BranchMInstruction::BX,lr);
    cur_block->InsertInst(cur_inst);
-   //待更新//if("")//叶与非叶函数不同
 }
 
 void CallInstruction::genMachineCode(AsmBuilder* bulider)
@@ -770,3 +780,4 @@ void ExtInstruction::genMachineCode(AsmBuilder* builder)
     cur_inst = new ExtMInstruction(cur_block, dst, src);
     cur_block->InsertInst(cur_inst);
 }
+

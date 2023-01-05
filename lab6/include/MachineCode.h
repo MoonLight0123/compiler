@@ -207,6 +207,7 @@ public:
     void addSavedRegs(int regno) {saved_regs.insert(regno);};
     void output();
     int getStackSize() const {return stack_size;};
+    std::set<int>& getSavedRegs(){return saved_regs;};
 };
 
 class MachineUnit

@@ -53,7 +53,7 @@ run:app
 	@$(BINARY) -o example.s -S example.sy
 
 gdb:app
-	@gdb $(BINARY)
+	@gdb --args $(BINARY) -o example.s -S example.sy
 
 $(OBJ_PATH)/lexer.o:$(SRC_PATH)/lexer.cpp
 	@mkdir -p $(OBJ_PATH)

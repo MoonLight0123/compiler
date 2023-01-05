@@ -1,5 +1,6 @@
 #include "MachineCode.h"
 #include <list>
+#include "Instruction.h"
 extern FILE* yyout;
 
 MachineOperand::MachineOperand(int tp, int val)
@@ -391,7 +392,8 @@ StackMInstrcuton::StackMInstrcuton(MachineBlock* p, int op,
     //this->use_list = src;
     this->use_list.push_back(src);
     for(auto reg : use_list){
-        reg->setParent(this);
+        if(reg!=nullptr)
+            reg->setParent(this);
     }
 }
 
@@ -408,6 +410,7 @@ void StackMInstrcuton::output()
     }
     bool is_first = true;
     for(auto reg : use_list){
+        if(reg==nullptr)continue;
         if(!is_first)
             fprintf(yyout, ", ");
         else
@@ -479,7 +482,15 @@ void MachineFunction::output()
     *  3. Save callee saved register
     *  4. Allocate stack space for local variable */
     //1. Save fp
-    fprintf(yyout,"\tpush {fp, lr}\n");
+    fprintf(yyout,"\tpush {\n");
+    Instruction* temp=new DummyInstruction();
+    for(auto &reg:saved_regs)
+    {
+        temp->genMachineReg(reg)->output();
+        fprintf(yyout,", ");
+    }
+    fprintf(yyout,"fp, lr\n");
+
 
     fprintf(yyout,"\tmov fp sp\n");
 
@@ -558,3 +569,4 @@ void MachineUnit::output()
         iter->output();
     printBridge();
 }
+

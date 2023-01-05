@@ -34,7 +34,6 @@ public:
     std::string toStr();
     bool isBool(){return size==1;};
     bool isInt(){return size==32;};
-    int getSize(){return size;};
 };
 
 class VoidType : public Type
@@ -103,4 +102,5 @@ public:
 };
 
 #endif
+
 
