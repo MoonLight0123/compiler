@@ -494,6 +494,9 @@ void MachineFunction::output()
     //1. Save fp
     fprintf(yyout,"\tpush {");
     Instruction* temp=new DummyInstruction();
+    //if(funcPopInst->use_list[0]==nullptr)printf("55555555555555555500");
+    //funcPopInst->use_list.pop_back();
+    printf("size:%d",funcPopInst->use_list.size());
     auto fp=temp->genMachineReg(11);
     auto lr=temp->genMachineReg(14);
     for(auto &reg:saved_regs)
@@ -506,7 +509,8 @@ void MachineFunction::output()
     fprintf(yyout,"fp, lr}\n");
     funcPopInst->addUse(fp);
     funcPopInst->addUse(lr);
-    fprintf(yyout,"\tmov fp sp\n");
+    printf("size:%d",funcPopInst->use_list.size());
+    fprintf(yyout,"\tmov fp, sp\n");
 
     fprintf(yyout,"\tsub sp ,sp ,#%d\n",stack_size);
 
