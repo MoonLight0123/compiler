@@ -1,13 +1,11 @@
-int main()
-{
+int main() {
     int a;
-    int b;
-    int min;
-    a = 1 + 2 + 3;
-    b = 2 + 3 + 4;
-    if (a < b)
-        min = a;
-    else
-        min = b;
-    return min;
+    a = 10;
+    if (+-!!!a) {
+        a = - - -1;
+    }
+    else {
+        a = 0;
+    }
+    return a;
 }

@@ -23,7 +23,6 @@ bool dump_asm;
 
 int main(int argc, char *argv[])
 {
-printf("-1");
     int opt;
     while ((opt = getopt(argc, argv, "Siato:")) != -1)
     {
@@ -106,24 +105,20 @@ printf("-1");
 
 
     yyparse();
-    printf("-1");
     if(dump_ast)
         ast.output();
     ast.typeCheck();
-    printf("-2");
     ast.genCode(&unit);
-    printf("-3");
-    if(dump_ir)
+    if(dump_ir){
+        unit.dumpIr=true;
         unit.output();
-    printf("1");
+    }
     unit.genMachineCode(&mUnit);
-    printf("2");
     LinearScan linearScan(&mUnit);
-    printf("3");
     linearScan.allocateRegisters();
-    printf("4");
-    if(dump_asm)
+    if(dump_asm){
         mUnit.output();
-    printf("5");
+    }
     return 0;
 }
+

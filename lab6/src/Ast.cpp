@@ -288,10 +288,11 @@ void DeclStmt::genCode()
         //new GlobalInitInstruction(new Operand(se),bb);
         int initVal=se->getInitVal();
         bool haveInitVal=se->haveInitVal;
-        if(haveInitVal)
-            fprintf(yyout, "@%s = global %s %d, align 4 \n",se->name.c_str(), se->type->toStr().c_str(),initVal);
-        else
-            fprintf(yyout, "@%s = global %s 0, align 4 \n", se->name.c_str(), se->type->toStr().c_str());
+        if(builder->getUnit()->dumpIr)
+            if(haveInitVal)//生成llvmir时这两句生效
+                fprintf(yyout, "@%s = global %s %d, align 4 \n",se->name.c_str(), se->type->toStr().c_str(),initVal);
+            else
+                fprintf(yyout, "@%s = global %s 0, align 4 \n", se->name.c_str(), se->type->toStr().c_str());
         builder->getUnit()->getGlbIds().push_back(se);
     }
     else if(se->isLocal())
@@ -1403,3 +1404,4 @@ void Extend::genCode()
     BasicBlock *bb=builder->getInsertBB();
     new ExtInstruction(dst, originNode->getOperand(), bb);
 }
+

@@ -147,24 +147,6 @@ void BinaryMInstruction::output()
 {
     // TODO: 
     // Complete other instructions
-    // switch (this->op)
-    // {
-    // case BinaryMInstruction::ADD:
-    //     fprintf(yyout, "\tadd ");
-    //     this->PrintCond();
-    //     this->def_list[0]->output();
-    //     fprintf(yyout, ", ");
-    //     this->use_list[0]->output();
-    //     fprintf(yyout, ", ");
-    //     this->use_list[1]->output();
-    //     fprintf(yyout, "\n");
-    //     break;
-    // case BinaryMInstruction::SUB:
-    //     break;
-    // default:
-    //     break;
-    // }
-
     switch (this->op)
     {
     case BinaryMInstruction::ADD:
@@ -177,30 +159,30 @@ void BinaryMInstruction::output()
         fprintf(yyout, "\tmul ");
         break;
     case BinaryMInstruction::DIV:
+        // fprintf(yyout, "\tbl\t__aeabi_idiv\n");
         fprintf(yyout, "\tsdiv ");
         break;
-    case BinaryMInstruction::MOD:
-        fprintf(yyout, "\tmod ");
-        break;
+    // case BinaryMInstruction::MOD:
+    //     fprintf(yyout, "\tbl\t__aeabi_idivmod\n");
+    //     break;
     case BinaryMInstruction::AND:
         fprintf(yyout, "\tand ");
         break;
     case BinaryMInstruction::OR:
-        fprintf(yyout, "\tor ");
-        break;
-    case BinaryMInstruction::XOR:
-        fprintf(yyout, "\txor ");
+        fprintf(yyout, "\torr ");
         break;
     default:
         break;
     }
-    this->PrintCond();
-    this->def_list[0]->output();
-    fprintf(yyout, ", ");
-    this->use_list[0]->output();
-    fprintf(yyout, ", ");
-    this->use_list[1]->output();
-    fprintf(yyout, "\n");
+    // if(op != DIV && op != MOD){
+        this->PrintCond();
+        this->def_list[0]->output();
+        fprintf(yyout, ", ");
+        this->use_list[0]->output();
+        fprintf(yyout, ", ");
+        this->use_list[1]->output();
+        fprintf(yyout, "\n");
+    // }
 }
 
 LoadMInstruction::LoadMInstruction(MachineBlock* p,
@@ -496,7 +478,7 @@ void MachineFunction::output()
     Instruction* temp=new DummyInstruction();
     //if(funcPopInst->use_list[0]==nullptr)printf("55555555555555555500");
     //funcPopInst->use_list.pop_back();
-    printf("size:%d",funcPopInst->use_list.size());
+    //printf("size:%d",funcPopInst->use_list.size());
     auto fp=temp->genMachineReg(11);
     auto lr=temp->genMachineReg(14);
     for(auto &reg:saved_regs)
@@ -509,7 +491,7 @@ void MachineFunction::output()
     fprintf(yyout,"fp, lr}\n");
     funcPopInst->addUse(fp);
     funcPopInst->addUse(lr);
-    printf("size:%d",funcPopInst->use_list.size());
+    //printf("size:%d",funcPopInst->use_list.size());
     fprintf(yyout,"\tmov fp, sp\n");
 
     fprintf(yyout,"\tsub sp ,sp ,#%d\n",stack_size);
@@ -549,7 +531,7 @@ void MachineUnit::PrintGlobalDecl()
     {
         fprintf(yyout,"\t.global %s\n",globId->name.c_str());
         fprintf(yyout,"\t.align 4\n");
-        fprintf(yyout,"\t.size %s, %d\n",globId->name.c_str(),globId->getType()->getSize());
+        fprintf(yyout,"\t.size %s, %d\n",globId->name.c_str(),globId->getType()->getSize()/8);
         fprintf(yyout,"%s:\n",globId->name.c_str());
 
         //现在只支持int32的全局变量

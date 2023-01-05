@@ -28,7 +28,8 @@ public:
     std::vector<IdentifierSymbolEntry*>& getGlbIds() { return glbIds; }
     std::vector<IdentifierSymbolEntry*>& getSysFuncs() { return sysFuncs; }
     void genMachineCode(MachineUnit* munit);
-
+    bool dumpIr=false;
 };
 
 #endif
+

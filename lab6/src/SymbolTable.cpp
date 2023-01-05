@@ -29,9 +29,9 @@ IdentifierSymbolEntry::IdentifierSymbolEntry(Type *type, std::string name, int s
 
 std::string IdentifierSymbolEntry::toStr()
 {
-    if(this->isGlobal())
-        return "@" + name;
-    else return "%"+name;
+        if(this->isGlobal())
+            return "@" + name;
+        else return "%"+name;
 }
 
 TemporarySymbolEntry::TemporarySymbolEntry(Type *type, int label) : SymbolEntry(type, SymbolEntry::TEMPORARY)
@@ -142,9 +142,6 @@ SymbolEntry* SymbolTable::lookup(std::string name)
 
 bool SymbolTable::matchFP(SymbolEntry* se, std::vector<Type*> typeList){
 
-
-
-
 }
 
 
@@ -158,3 +155,4 @@ int SymbolTable::counter = 0;
 static SymbolTable t;
 SymbolTable *identifiers = &t;
 SymbolTable *globals = &t;
+

@@ -28,6 +28,8 @@ public:
     void setType(Type *type) {this->type = type;};
     virtual std::string toStr() = 0;
     // You can add any function you need here.
+    static bool dumpIr;
+    static bool dumpAsm;
 };
 
 
@@ -161,3 +163,4 @@ extern SymbolTable *identifiers;
 extern SymbolTable *globals;
 
 #endif
+

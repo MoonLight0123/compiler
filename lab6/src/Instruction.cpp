@@ -409,7 +409,7 @@ MachineOperand* Instruction::genMachineOperand(Operand* ope)
     {
         auto id_se = dynamic_cast<IdentifierSymbolEntry*>(se);
         if(id_se->isGlobal())
-            mope = new MachineOperand(id_se->toStr().c_str());
+            mope = new MachineOperand(id_se->toStr().erase(0,1).c_str());
         else
             exit(0);
     }
@@ -508,6 +508,13 @@ void StoreInstruction::genMachineCode(AsmBuilder* builder)
         cur_inst = new LoadMInstruction(cur_block, internal_reg1, dst);
         cur_block->InsertInst(cur_inst);
         // example: sdr r1, [r0]
+        if(src->isImm())
+        {
+            auto internal_reg = genMachineVReg();
+            cur_inst = new LoadMInstruction(cur_block, internal_reg, src);
+            cur_block->InsertInst(cur_inst);
+            src = new MachineOperand(*internal_reg);
+        }
         cur_inst = new StoreMInstruction(cur_block, src, internal_reg2);
         cur_block->InsertInst(cur_inst);
     }
@@ -518,6 +525,13 @@ void StoreInstruction::genMachineCode(AsmBuilder* builder)
     {
         // example: store r1, [r0, #4]
         auto src = genMachineOperand(operands[1]);
+        if(src->isImm())
+        {
+            auto internal_reg = genMachineVReg();
+            cur_inst = new LoadMInstruction(cur_block, internal_reg, src);
+            cur_block->InsertInst(cur_inst);
+            src = new MachineOperand(*internal_reg);
+        }
         auto src1 = genMachineReg(11);
         auto src2 = genMachineImm(dynamic_cast<TemporarySymbolEntry*>(operands[0]->getEntry())->getOffset());//dstaddr相对fp的偏移量
         cur_inst = new StoreMInstruction(cur_block, src, src1, src2);
