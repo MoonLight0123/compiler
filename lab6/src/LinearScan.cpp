@@ -163,7 +163,38 @@ bool LinearScan::linearScanRegisterAllocation()
 {
     // Todo
 
-    return true;
+    bool success = true;
+    
+    regs.clear();
+
+    for (int i = 4; i < 11; i++){
+        regs.push_back(i);
+    }
+
+    //actite Represents the set of active intervals currently occupying physical registers
+    active.clear();
+
+    for(auto &interval : intervals){
+        expireOldIntervals(interval);
+        //判断 active 列表中 interval 的数目和可用的物理寄存器数目是否相等
+
+
+        //active 列表中 interval 的数目和可用的物理寄存器数目是相等
+        //溢出
+        if(regs.size() == 0){
+            spillAtInterval(interval);
+            success = false;
+        }
+
+        else{//当前有可用于分配的物理寄存器
+            interval->rreg = regs[regs.size()-1];//为 unhandled interval 分配物理寄存器
+            regs.pop_back();
+            //再按照活跃区间结束位置，将其插入到 active 列表中
+            std::vector<Interval*>::iterator insertPosition = std::lower_bound(active.begin(), active.end(), interval, insertCompare);
+            active.insert(insertPosition, interval);//按照unhandled interval活跃区间结束位置，将其插入到 active 列表中
+        }
+    }
+    return success;
 }
 
 void LinearScan::modifyCode()
@@ -190,17 +221,67 @@ void LinearScan::genSpillCode()
          * 1. insert ldr inst before the use of vreg
          * 2. insert str inst after the def of vreg
          */ 
+        //The vreg should be spilled to memory.
+        interval->disp = func->AllocSpace(4);
+        // 1. insert ldr inst before the use of vreg
+        for (auto use : interval->uses){
+            MachineBlock* block = use->getParent()->getParent();
+            block->insertBefore(use->getParent(), new LoadMInstruction(block, use, new MachineOperand(MachineOperand::REG, 11), new MachineOperand(MachineOperand::IMM, -interval->disp)));
+        }
+        // 2. insert str inst after the def of vreg
+        for (auto def : interval->defs){
+            MachineBlock* block = def->getParent()->getParent();
+            block->insertAfter(def->getParent(), new StoreMInstruction(block, def, new MachineOperand(MachineOperand::REG, 11), new MachineOperand(MachineOperand::IMM, -interval->disp)));
+        }
+
+
+
+
     }
 }
 
 void LinearScan::expireOldIntervals(Interval *interval)
 {
     // Todo
+    //for(auto ate : active){
+    for(std::vector<Interval*>::iterator ate = active.begin(); ate != active.end(); ){
+
+
+        if((*ate)->end>=interval->start){
+            return;
+        }
+
+            regs.push_back((*ate)->rreg);   //add register[j] to pool of free registers
+            active.erase(find(active.begin(), active.end(), *ate)); //remove j from active
+            sort(regs.begin(), regs.end());
+    }
+
+
+
 }
+
+
+
 
 void LinearScan::spillAtInterval(Interval *interval)
 {
     // Todo
+
+    if(active[active.size()-1]->end > interval->end){
+
+        active[active.size()-1]->spill = true;
+        interval->rreg = active[active.size()-1]->rreg;//并将其占用的寄存器分配给 unhandled interval
+        active.push_back(interval); //insert
+        sort(active.begin(), active.end(), insertCompare); //sort
+
+
+    }
+    else{
+
+        interval->spill=true;
+
+    }
+
 }
 
 bool LinearScan::compareStart(Interval *a, Interval *b)

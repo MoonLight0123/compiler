@@ -32,6 +32,7 @@ private:
     std::vector<int> regs;
     std::map<MachineOperand *, std::set<MachineOperand *>> du_chains;
     std::vector<Interval*> intervals;
+    std::vector<Interval*> active; //////new 
     static bool compareStart(Interval*a, Interval*b);
     void expireOldIntervals(Interval *interval);
     void spillAtInterval(Interval *interval);
@@ -40,6 +41,8 @@ private:
     bool linearScanRegisterAllocation();
     void modifyCode();
     void genSpillCode();
+
+    static bool insertCompare(Interval* f, Interval* n){return f->end < n->end;}   //compare to ensure the position of new active
 public:
     LinearScan(MachineUnit *unit);
     void allocateRegisters();

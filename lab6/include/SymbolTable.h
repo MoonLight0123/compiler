@@ -98,7 +98,6 @@ public:
     void setFuncType(Type *t){this->type=t;};
     void setInitVal(int i){this->initVal=i;haveInitVal=true;};
     int getInitVal(){return initVal;}
-
     bool haveInitVal;
 };
 
@@ -133,9 +132,9 @@ public:
     int getLabel() const {return label;};
     int getTemporySymbolEntryLabel(){return label;};
     void setLabel(int label){this->label=label;};
-    // You can add any function you need here.
     void setOffset(int offset) { this->stack_offset = offset; };
     int getOffset() { return this->stack_offset; };
+    // You can add any function you need here.
 };
 
 // symbol table managing identifier symbol entries

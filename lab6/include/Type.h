@@ -20,6 +20,7 @@ public:
     bool isVoid() const {return kind == VOID;};
     bool isFunc() const {return kind == FUNC;};
     bool isFloat() const {return kind==FLOAT;};
+    virtual int getSize() {return -1;};
 };
 
 class IntType : public Type
@@ -33,6 +34,7 @@ public:
     std::string toStr();
     bool isBool(){return size==1;};
     bool isInt(){return size==32;};
+    int getSize(){return size;};
 };
 
 class VoidType : public Type
@@ -74,6 +76,7 @@ private:
 public:
     FloatType(int size) : Type(Type::FLOAT), size(size){};
     std::string toStr();
+    int getSize(){return size;};
 };
 
 class PointerType : public Type

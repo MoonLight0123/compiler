@@ -4,6 +4,7 @@
 #include <vector>
 #include "Function.h"
 #include "AsmBuilder.h"
+
 class Unit
 {
     typedef std::vector<Function *>::iterator iterator;
@@ -26,8 +27,8 @@ public:
     
     std::vector<IdentifierSymbolEntry*>& getGlbIds() { return glbIds; }
     std::vector<IdentifierSymbolEntry*>& getSysFuncs() { return sysFuncs; }
-
     void genMachineCode(MachineUnit* munit);
+
 };
 
 #endif

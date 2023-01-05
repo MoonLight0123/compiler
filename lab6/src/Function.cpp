@@ -49,6 +49,7 @@ void Function::output() const
         }
         fprintf(yyout, ") {\n");
     }
+
     std::set<BasicBlock *> v;
     std::list<BasicBlock *> q;
     q.push_back(entry);
@@ -60,7 +61,7 @@ void Function::output() const
         bb->output();
         for (auto succ = bb->succ_begin(); succ != bb->succ_end(); succ++)
         {
-            if (v.find(*succ) == v.end())
+            if (v.find(*succ) == v.end())//如果succ不在v中
             {
                 v.insert(*succ);
                 q.push_back(*succ);
@@ -69,6 +70,7 @@ void Function::output() const
     }
     fprintf(yyout, "}\n");
 }
+
 void Function::genMachineCode(AsmBuilder* builder) 
 {
     auto cur_unit = builder->getUnit();
@@ -80,6 +82,8 @@ void Function::genMachineCode(AsmBuilder* builder)
         block->genMachineCode(builder);
         map[block] = builder->getBlock();
     }
+
+    
     // Add pred and succ for every block
     for(auto block : block_list)
     {
@@ -92,4 +96,3 @@ void Function::genMachineCode(AsmBuilder* builder)
     cur_unit->InsertFunc(cur_func);
 
 }
-

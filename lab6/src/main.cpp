@@ -64,6 +64,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "%s: fail to open output file\n", outfile);
         exit(EXIT_FAILURE);
     }
+    
      vector<Type*> tempParaType;
     tempParaType.push_back(TypeSystem::voidType);
     auto funcType = new FunctionType(TypeSystem::intType, tempParaType);
@@ -98,6 +99,11 @@ int main(int argc, char *argv[])
     auto id8 = new IdentifierSymbolEntry(funcType8, "putch", 0);
     identifiers->installFunc("putch", id8);
     unit.getSysFuncs().push_back(id8);
+
+
+
+
+
     yyparse();
     if(dump_ast)
         ast.output();

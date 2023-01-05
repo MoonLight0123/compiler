@@ -24,13 +24,14 @@ public:
     Instruction *getNext();
     Instruction *getPrev();
     virtual void output() const = 0;
-    std::vector<Operand*> &getOperands(){return operands;};
+    std::vector<Operand*> &getOperands(){return operands;}; 
     MachineOperand* genMachineOperand(Operand*);
     MachineOperand* genMachineReg(int reg);
     MachineOperand* genMachineVReg();
     MachineOperand* genMachineImm(int val);
     MachineOperand* genMachineLabel(int block_no);
-    virtual void genMachineCode(AsmBuilder*) = 0; 
+    virtual void genMachineCode(AsmBuilder*) = 0;
+
 protected:
     unsigned instType;
     unsigned opcode;
@@ -86,8 +87,8 @@ public:
     BinaryInstruction(unsigned opcode, Operand *dst, Operand *src1, Operand *src2, BasicBlock *insert_bb = nullptr);
     ~BinaryInstruction();
     void output() const;
-    enum {SUB, ADD, MUL,DIV,MOD,AND,OR,XOR};
     void genMachineCode(AsmBuilder*);
+    enum {SUB, ADD, MUL,DIV,MOD,AND,OR,XOR};
 };
 
 class CmpInstruction : public Instruction
@@ -96,8 +97,8 @@ public:
     CmpInstruction(unsigned opcode, Operand *dst, Operand *src1, Operand *src2, BasicBlock *insert_bb = nullptr);
     ~CmpInstruction();
     void output() const;
-    enum {E, NE, L, GE, G, LE};
     void genMachineCode(AsmBuilder*);
+    enum {E, NE, L, GE, G, LE};
 };
 
 // unconditional branch
@@ -140,8 +141,6 @@ public:
     void output() const;
     void genMachineCode(AsmBuilder*);
 };
-
-
 
 
 class CallInstruction : public Instruction

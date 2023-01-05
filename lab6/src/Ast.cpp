@@ -292,6 +292,7 @@ void DeclStmt::genCode()
             fprintf(yyout, "@%s = global %s %d, align 4 \n",se->name.c_str(), se->type->toStr().c_str(),initVal);
         else
             fprintf(yyout, "@%s = global %s 0, align 4 \n", se->name.c_str(), se->type->toStr().c_str());
+        builder->getUnit()->getGlbIds().push_back(se);
     }
     else if(se->isLocal())
     {
@@ -313,19 +314,13 @@ void DeclStmt::genCode()
         BasicBlock *bb=builder->getInsertBB();
         SymbolEntry *addr_se;
         Operand *addr;
-        addr_se=new TemporarySymbolEntry(se->getType(),SymbolTable::getLabel());
+        addr_se=new TemporarySymbolEntry(new PointerType(se->getType()),SymbolTable::getLabel());
         addr=new Operand(addr_se);
-        new AllocaInstruction(addr,addr_se,bb);
+        new AllocaInstruction(addr,se,bb);
         SymbolEntry *ad=new IdentifierSymbolEntry(*se);
-
-        TemporarySymbolEntry* a=(TemporarySymbolEntry*)addr_se;
-        SymbolEntry* add=new TemporarySymbolEntry(new PointerType(se->getType()),a->getTemporySymbolEntryLabel());
-        
-        Operand* addd=new Operand(add);
-        new StoreInstruction(addd,new Operand(ad),bb);
-        se->setAddr(addd);
+        new StoreInstruction(addr,new Operand(ad),bb);
+        se->setAddr(addr);
     }
-
 }
 
 void ReturnStmt::genCode()
