@@ -12,7 +12,7 @@ Function::Function(Unit *u, SymbolEntry *s)
     exit=nullptr;
     sym_ptr = s;
     parent = u;
-    paramCount=0;
+    paramCount=-1;
 }
 
 Function::~Function()

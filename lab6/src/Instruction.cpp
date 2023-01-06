@@ -412,8 +412,9 @@ MachineOperand* Instruction::genMachineOperand(Operand* ope)
             mope = new MachineOperand(id_se->toStr().erase(0,1).c_str());
         else if(id_se->isParam())
         {
-            if(id_se->paramNo<=4)
+            if(id_se->paramNo<=4){
                 mope=genMachineReg(id_se->paramNo);
+            }
             else //其余情况为参数大于4个要从栈中取
             {
 
@@ -689,7 +690,7 @@ void CondBrInstruction::genMachineCode(AsmBuilder* builder)
         cur_inst = new BranchMInstruction(cur_block,BranchMInstruction::B,genMachineLabel(true_branch->getNo()),MachineInstruction::LE);
         break;
     case CmpInstruction::G:
-        cur_inst = new BranchMInstruction(cur_block,BranchMInstruction::B,genMachineLabel(true_branch->getNo()),MachineInstruction::GE);
+        cur_inst = new BranchMInstruction(cur_block,BranchMInstruction::B,genMachineLabel(true_branch->getNo()),MachineInstruction::GT);
         break;
     default:
         break;
@@ -728,30 +729,6 @@ void RetInstruction::genMachineCode(AsmBuilder* builder)
    auto offset=genMachineImm(builder->getFunction()->getStackSize());
    cur_inst=new BinaryMInstruction(cur_block,BinaryMInstruction::ADD,sp,sp,offset);
    cur_block->InsertInst(cur_inst);
-
-//    if(builder->getFunction()->getSavedRegs().size()>0)
-//    {
-//         bool isFirst=true;
-//         for(auto &reg:builder->getFunction()->getSavedRegs())
-//         {
-//                 auto temp=genMachineReg(reg);
-//                 if(isFirst)
-//                 {
-//                     cur_inst=new StackMInstrcuton(cur_block,StackMInstrcuton::POP,temp);
-//                     isFirst=false;
-//                     continue;
-//                 }
-//                 cur_inst->addUse(temp);
-//         }
-//         cur_inst->addUse(fp);
-//         cur_inst->addUse(lr);
-//    }
-//    else
-//    {
-//       cur_inst=new StackMInstrcuton(cur_block,StackMInstrcuton::POP,fp);
-//       cur_inst->addUse(lr);  
-//    }
-    //cur_inst=new StackMInstrcuton(cur_block,StackMInstrcuton::POP,nullptr);//pop指令的寄存器之后回填
     cur_inst=builder->getFunction()->funcPopInst;
     cur_inst->setParent(cur_block);
    cur_block->InsertInst(cur_inst);

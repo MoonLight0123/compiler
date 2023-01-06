@@ -322,7 +322,7 @@ void DeclStmt::genCode()
         SymbolEntry *ad=new IdentifierSymbolEntry(*se);
         new StoreInstruction(addr,new Operand(ad),bb);
         se->setAddr(addr);
-        se->paramNo=++(func->paramCount);
+        ((IdentifierSymbolEntry*)ad)->paramNo=func->getParamCount();
     }
 }
 

@@ -38,6 +38,7 @@ public:
     SymbolEntry *getSymPtr() { return sym_ptr; };
     void genMachineCode(AsmBuilder*);
     int paramCount;
+    int getParamCount(){paramCount++;return paramCount;};
 };
 
 #endif
