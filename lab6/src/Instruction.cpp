@@ -410,6 +410,15 @@ MachineOperand* Instruction::genMachineOperand(Operand* ope)
         auto id_se = dynamic_cast<IdentifierSymbolEntry*>(se);
         if(id_se->isGlobal())
             mope = new MachineOperand(id_se->toStr().erase(0,1).c_str());
+        else if(id_se->isParam())
+        {
+            if(id_se->paramNo<=4)
+                mope=genMachineReg(id_se->paramNo);
+            else //其余情况为参数大于4个要从栈中取
+            {
+
+            }
+        }
         else
             exit(0);
     }
@@ -524,7 +533,7 @@ void StoreInstruction::genMachineCode(AsmBuilder* builder)
     && operands[0]->getDef()->isAlloc())
     {
         // example: store r1, [r0, #4]
-        auto src = genMachineOperand(operands[1]);
+        auto src = genMachineOperand(operands[1]);//这里没有写函数生成operand
         if(src->isImm())
         {
             auto internal_reg = genMachineVReg();
@@ -590,8 +599,22 @@ void BinaryInstruction::genMachineCode(AsmBuilder* builder)
     case DIV:
         cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::DIV, dst, src1, src2);
         break;
+    // case MOD:
+    //     cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::MOD, dst, src1, src2);
+    //     break;
+    // a % b = a - a / b * b
     case MOD:
-        cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::MOD, dst, src1, src2);
+        {
+            cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::DIV, dst, src1, src2);
+            MachineOperand *dst1 = new MachineOperand(*dst);
+            src1 = new MachineOperand(*src1);
+            src2 = new MachineOperand(*src2);
+            cur_block->InsertInst(cur_inst);
+            cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::MUL, dst1, dst, src2);
+            cur_block->InsertInst(cur_inst);
+            dst = new MachineOperand(*dst1);
+            cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::SUB, dst, src1, dst1);
+        }
         break;
     case AND:
         cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::AND, dst, src1, src2);
@@ -771,12 +794,13 @@ void CallInstruction::genMachineCode(AsmBuilder* bulider)
     }
     auto funName=((IdentifierSymbolEntry*)se)->name.c_str();
     cur_inst=new BranchMInstruction(cur_block,BranchMInstruction::BL,new MachineOperand(MachineOperand::FUNC,funName));
+    cur_block->InsertInst(cur_inst);
 
-    //若返回值不是void，则mov r0,ret
+    //若返回值不是void，则mov ret,r0
     if(((FunctionType*)se->getType())->getRetType()!=TypeSystem::voidType)
     {
-        auto dst=genMachineReg(0);
-        auto src=genMachineOperand(operands[0]);
+        auto src=genMachineReg(0);
+        auto dst=genMachineOperand(operands[0]);
         cur_inst=new MovMInstruction(cur_block,MovMInstruction::MOV,dst,src);
         cur_block->InsertInst(cur_inst);
     }
@@ -790,6 +814,7 @@ void CallInstruction::genMachineCode(AsmBuilder* bulider)
         cur_block->InsertInst(cur_inst);
     }
 }
+
 
 void ExtInstruction::genMachineCode(AsmBuilder* builder)
 {
@@ -807,4 +832,5 @@ void ExtInstruction::genMachineCode(AsmBuilder* builder)
     cur_inst = new ExtMInstruction(cur_block, dst, src);
     cur_block->InsertInst(cur_inst);
 }
+
 

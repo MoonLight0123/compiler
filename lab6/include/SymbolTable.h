@@ -85,7 +85,7 @@ public:
     Operand *addr;  // The address of the identifier.
     // You can add any field you need here.
     int initVal;
-
+    int paramNo;//当isParam()==true时这个变量有效
     IdentifierSymbolEntry(Type *type, std::string name, int scope);
     virtual ~IdentifierSymbolEntry() {};
     std::string toStr();
@@ -101,6 +101,7 @@ public:
     void setInitVal(int i){this->initVal=i;haveInitVal=true;};
     int getInitVal(){return initVal;}
     bool haveInitVal;
+
 };
 
 
@@ -163,4 +164,5 @@ extern SymbolTable *identifiers;
 extern SymbolTable *globals;
 
 #endif
+
 

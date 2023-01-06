@@ -164,15 +164,16 @@ bool LinearScan::linearScanRegisterAllocation()
     // Todo
 
     bool success = true;
-    
+
+    //actite Represents the set of active intervals currently occupying physical registers
+    active.clear();
     regs.clear();
 
     for (int i = 4; i < 11; i++){
         regs.push_back(i);
     }
 
-    //actite Represents the set of active intervals currently occupying physical registers
-    active.clear();
+
 
     for(auto &interval : intervals){
         expireOldIntervals(interval);
@@ -190,8 +191,10 @@ bool LinearScan::linearScanRegisterAllocation()
             interval->rreg = regs[regs.size()-1];//为 unhandled interval 分配物理寄存器
             regs.pop_back();
             //再按照活跃区间结束位置，将其插入到 active 列表中
-            std::vector<Interval*>::iterator insertPosition = std::lower_bound(active.begin(), active.end(), interval, insertCompare);
-            active.insert(insertPosition, interval);//按照unhandled interval活跃区间结束位置，将其插入到 active 列表中
+            // std::vector<Interval*>::iterator insertPosition = std::lower_bound(active.begin(), active.end(), interval, insertCompare);
+            // active.insert(insertPosition, interval);//按照unhandled interval活跃区间结束位置，将其插入到 active 列表中
+            active.push_back(interval);
+            sort(active.begin(), active.end(), insertCompare);
         }
     }
     return success;

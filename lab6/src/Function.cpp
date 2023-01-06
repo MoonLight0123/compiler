@@ -12,6 +12,7 @@ Function::Function(Unit *u, SymbolEntry *s)
     exit=nullptr;
     sym_ptr = s;
     parent = u;
+    paramCount=0;
 }
 
 Function::~Function()
@@ -96,3 +97,4 @@ void Function::genMachineCode(AsmBuilder* builder)
     cur_unit->InsertFunc(cur_func);
 
 }
+

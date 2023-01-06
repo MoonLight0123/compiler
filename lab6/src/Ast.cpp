@@ -312,6 +312,7 @@ void DeclStmt::genCode()
     }
     else if(se->isParam())
     {
+        Function *func = builder->getInsertBB()->getParent();
         BasicBlock *bb=builder->getInsertBB();
         SymbolEntry *addr_se;
         Operand *addr;
@@ -321,6 +322,7 @@ void DeclStmt::genCode()
         SymbolEntry *ad=new IdentifierSymbolEntry(*se);
         new StoreInstruction(addr,new Operand(ad),bb);
         se->setAddr(addr);
+        se->paramNo=++(func->paramCount);
     }
 }
 
@@ -1404,4 +1406,5 @@ void Extend::genCode()
     BasicBlock *bb=builder->getInsertBB();
     new ExtInstruction(dst, originNode->getOperand(), bb);
 }
+
 

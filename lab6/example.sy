@@ -1,11 +1,20 @@
-int main() {
-    int a;
-    a = 10;
-    if (+-!!!a) {
-        a = - - -1;
-    }
-    else {
-        a = 0;
-    }
-    return a;
+int fun(int m,int n){
+	int rem;			
+	while(n > 0){
+		rem = m % n;
+		m = n;
+		n = rem;
+	}
+	return m;				
 }
+int main(){
+	int n,m;
+	int num;
+	m=getint();
+	n=getint();
+	num=fun(m,n);
+	putint(num);
+
+	return 0; 
+}
+

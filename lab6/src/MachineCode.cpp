@@ -335,6 +335,7 @@ void BranchMInstruction::output()
     }
     this->def_list[0]->output();
     fprintf(yyout, "\n");
+    if(op==BX)fprintf(yyout, "\n");
 }
 
 CmpMInstruction::CmpMInstruction(MachineBlock* p, 
@@ -563,4 +564,5 @@ void MachineUnit::output()
         iter->output();
     printBridge();
 }
+
 
