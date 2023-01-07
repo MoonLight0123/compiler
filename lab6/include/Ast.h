@@ -61,6 +61,7 @@ public:
     void typeCheck();
     void genCode();
     bool isConstantVal(int &val);
+    
 };
 
 class Constant : public ExprNode

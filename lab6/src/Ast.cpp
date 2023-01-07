@@ -481,6 +481,8 @@ void BinaryExpr::typeCheck()
             Constant *zero=new Constant(se);
             SymbolEntry *sse=new TemporarySymbolEntry(TypeSystem::boolType,SymbolTable::getLabel());
             expr1=new BinaryExpr(sse,BinaryExpr::NOTEQUAL,expr1,zero);
+            
+            
         }
         if(!t2->isBool())
         {

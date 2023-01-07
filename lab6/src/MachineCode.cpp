@@ -159,22 +159,23 @@ void BinaryMInstruction::output()
         fprintf(yyout, "\tmul ");
         break;
     case BinaryMInstruction::DIV:
-        // fprintf(yyout, "\tbl\t__aeabi_idiv\n");
+
         fprintf(yyout, "\tsdiv ");
         break;
-    // case BinaryMInstruction::MOD:
-    //     fprintf(yyout, "\tbl\t__aeabi_idivmod\n");
-    //     break;
+
     case BinaryMInstruction::AND:
         fprintf(yyout, "\tand ");
         break;
     case BinaryMInstruction::OR:
         fprintf(yyout, "\torr ");
         break;
+    case BinaryMInstruction::XOR:
+        fprintf(yyout, "\teor ");
+        break;
     default:
         break;
     }
-    // if(op != DIV && op != MOD){
+   
         this->PrintCond();
         this->def_list[0]->output();
         fprintf(yyout, ", ");
@@ -182,7 +183,7 @@ void BinaryMInstruction::output()
         fprintf(yyout, ", ");
         this->use_list[1]->output();
         fprintf(yyout, "\n");
-    // }
+ 
 }
 
 LoadMInstruction::LoadMInstruction(MachineBlock* p,

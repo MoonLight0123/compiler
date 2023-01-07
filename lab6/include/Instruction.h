@@ -98,7 +98,8 @@ public:
     ~CmpInstruction();
     void output() const;
     void genMachineCode(AsmBuilder*);
-    enum {E, NE, L, GE, G, LE};
+    enum {E, NE, L, LE,G, GE};
+    
 };
 
 // unconditional branch
