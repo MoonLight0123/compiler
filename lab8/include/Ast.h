@@ -83,7 +83,11 @@ public:
 class Id : public ExprNode
 {
 public:
-    Id(SymbolEntry *se) : ExprNode(se){SymbolEntry *temp = new TemporarySymbolEntry(se->getType(), SymbolTable::getLabel()); dst = new Operand(temp);};
+    Id(SymbolEntry *se) : ExprNode(se)
+    {
+        SymbolEntry *temp = new TemporarySymbolEntry(se->getType(), SymbolTable::getLabel());
+        dst = new Operand(temp);
+     };
     void output(int level);
     void typeCheck();
     void genCode();
@@ -233,16 +237,6 @@ private:
     ExprNode *dimValList;
     //SymbolEntry *arrayId;
 public:
-    // ArrayElement(SymbolEntry *se,ExprNode *dimValList) : ExprNode(nullptr),dimValList(dimValList)
-    // {
-    //     arrayId=se;
-    //     Type* t=((ArrayType*)se->getType())->arrayElementType;
-    //     SymbolEntry *temp = new TemporarySymbolEntry(t, SymbolTable::getLabel()); 
-    //     dst = new Operand(temp);
-
-    //     std::string arrayElementTempName="a";
-    //     symbolEntry=new IdentifierSymbolEntry(t,arrayElementTempName,((IdentifierSymbolEntry*)arrayId)->getScope());
-    // };
     ArrayElement(SymbolEntry *se,ExprNode *dimValList) : ExprNode(se),dimValList(dimValList)
     {
         Type* t=((ArrayType*)se->getType())->arrayElementType;
@@ -294,6 +288,7 @@ public:
     void output(int level);
     void typeCheck();
     void genCode();
+    
 };
 
 class EmptyStmt : public StmtNode{
@@ -350,6 +345,7 @@ public:
     void genCode();
     void getArrayDimVal(std::vector<int> &a){arrayDim->getArrayDimVal(a);};
     std::vector<Operand*> arrayInitValOperands;
+    std::vector<ExprNode*> constArrayInitNode;
 };
 class ArrayValDim : public ExprNode//仅用于数组初始化
 {

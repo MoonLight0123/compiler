@@ -21,6 +21,7 @@ public:
     bool isFunc() const {return kind == FUNC;};
     bool isFloat() const {return kind==FLOAT;};
     bool isArray() const {return kind==ARRAY;};
+    bool isPointer() const {return kind==PTR;};
     virtual int getSize() {return -1;};
 };
 
@@ -66,6 +67,7 @@ public:
     std::vector<int> dimsVal;
     ArrayType(Type *arrayElementType):Type(Type::ARRAY),arrayElementType(arrayElementType){};
     std::string toStr();
+    std::vector<int> constArrayInitVal;
 };
 
 class FloatType:public Type
@@ -80,9 +82,8 @@ public:
 
 class PointerType : public Type
 {
-private:
-    Type *valueType;
 public:
+    Type *valueType;
     PointerType(Type* valueType) : Type(Type::PTR) {this->valueType = valueType;};
     std::string toStr();
 };

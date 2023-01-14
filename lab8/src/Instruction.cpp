@@ -455,6 +455,7 @@ MachineOperand *Instruction::genMachineOperand(Operand *ope)
             }
             else // 其余情况为参数大于4个要从栈中取
             {
+
             }
         }
         else
@@ -495,6 +496,12 @@ void AllocaInstruction::genMachineCode(AsmBuilder *builder)
     int offset=0;
     if(se->getType()->isArray())
     {
+        if(((ArrayType*)se->getType())->dimsVal[0]==-1)//这个数组是函数参数的话特殊处理
+        {
+            offset=cur_func->AllocSpace(4);
+            dynamic_cast<TemporarySymbolEntry *>(operands[0]->getEntry())->setOffset(-offset);
+            return;
+        }
         int elementNum=1;
         for(auto i:((ArrayType*)se->getType())->dimsVal)
             elementNum*=i;
@@ -524,7 +531,8 @@ void LoadInstruction::genMachineCode(AsmBuilder *builder)
         cur_block->InsertInst(cur_inst);
     }
     // Load local operand
-    else if (operands[1]->getEntry()->isTemporary() && operands[1]->getDef() && operands[1]->getDef()->isAlloc())
+    else if (operands[1]->getEntry()->isTemporary() && operands[1]->getDef() && (operands[1]->getDef()->isAlloc()||((operands[1]->getEntry()->getType()->isPointer())
+    &&((PointerType*)operands[1]->getEntry()->getType())->valueType->isArray())))
     {
         // example: load r1, [r0, #4]
         auto dst = genMachineOperand(operands[0]);
@@ -571,7 +579,8 @@ void StoreInstruction::genMachineCode(AsmBuilder *builder)
         cur_block->InsertInst(cur_inst);
     }
     // Store local operand
-    else if (operands[0]->getEntry()->isTemporary() && operands[0]->getDef() && operands[0]->getDef()->isAlloc())
+    else if (operands[0]->getEntry()->isTemporary() && operands[0]->getDef() && (operands[0]->getDef()->isAlloc()||((operands[0]->getEntry()->getType()->isPointer())
+    &&((PointerType*)operands[0]->getEntry()->getType())->valueType->isArray())))
     {
         // example: store r1, [r0, #4]
         auto src = genMachineOperand(operands[1]); // 这里没有写函数生成operand
@@ -888,9 +897,6 @@ void GEPInstruction::genMachineCode(AsmBuilder *builder)
     MachineBlock *cur_block=builder->getBlock();
     MachineInstruction *cur_inst=nullptr;
 
-    //计算数组相对fp的偏移
-    auto base=genMachineImm(((TemporarySymbolEntry*)operands[1]->getEntry())->getOffset());
-
     //计算待访问元素相对基址的偏移
     auto r0=genMachineReg(0);
     cur_inst=new StackMInstrcuton(cur_block,StackMInstrcuton::PUSH,r0);
@@ -929,18 +935,41 @@ void GEPInstruction::genMachineCode(AsmBuilder *builder)
         curDimOffset=curDimOffset*dimval[i-3];
     }
 
-    //计算待访问元素相对fp的偏移
-    //auto addr=genMachineOperand(operands[0]);
-    auto elementBase=genMachineVReg();
-    cur_inst=new BinaryMInstruction(cur_block,BinaryMInstruction::ADD,elementBase,offsetSum,base);
-    cur_block->InsertInst(cur_inst);
+    if(((IdentifierSymbolEntry*)arraySe)->isLocal())
+    {
+        //计算数组相对fp的偏移
+        auto base=genMachineImm(((TemporarySymbolEntry*)operands[1]->getEntry())->getOffset());
+        //计算待访问元素相对fp的偏移
+        //auto addr=genMachineOperand(operands[0]);
+        auto elementBase=genMachineVReg();
+        cur_inst=new BinaryMInstruction(cur_block,BinaryMInstruction::ADD,elementBase,offsetSum,base);
+        cur_block->InsertInst(cur_inst);
 
 
-    auto addr=genMachineOperand(operands[0]);
-    auto fp=genMachineReg(11);
-    cur_inst=new BinaryMInstruction(cur_block,BinaryMInstruction::ADD,addr,fp,elementBase);
-    cur_block->InsertInst(cur_inst);
-
+        auto addr=genMachineOperand(operands[0]);
+        auto fp=genMachineReg(11);
+        cur_inst=new BinaryMInstruction(cur_block,BinaryMInstruction::ADD,addr,fp,elementBase);
+        cur_block->InsertInst(cur_inst);
+    }
+    else if(((IdentifierSymbolEntry*)arraySe)->isGlobal())
+    {
+        auto addr=genMachineOperand(operands[0]);
+        MachineOperand *baseAddrLabel=new MachineOperand(((IdentifierSymbolEntry*)arraySe)->name);
+        auto baseAddr=genMachineVReg();
+        cur_inst=new LoadMInstruction(cur_block,baseAddr,baseAddrLabel);
+        cur_block->InsertInst(cur_inst);
+        cur_inst=new BinaryMInstruction(cur_block,BinaryMInstruction::ADD,addr,baseAddr,offsetSum);
+        cur_block->InsertInst(cur_inst);
+    }
+    else if(((IdentifierSymbolEntry*)arraySe)->isParam())
+    {
+        auto addr=genMachineOperand(operands[0]);
+        int paramOffset=((IdentifierSymbolEntry*)arraySe)->paramNo*4+4;
+        auto stackOffset=genMachineImm(-paramOffset);
+        auto fp=genMachineReg(11);
+        cur_inst=new LoadMInstruction(cur_block,addr,fp,stackOffset);
+        cur_block->InsertInst(cur_inst);
+    }
     cur_inst=new StackMInstrcuton(cur_block,StackMInstrcuton::POP,r0);
     cur_block->InsertInst(cur_inst);
 }

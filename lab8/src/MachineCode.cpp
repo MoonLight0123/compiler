@@ -539,6 +539,24 @@ void MachineUnit::PrintGlobalDecl()
         //现在只支持int32的全局变量
         if(globId->getType()==TypeSystem::intType)//全局变量必有初值
             fprintf(yyout,"\t.word %d\n",globId->initVal);
+
+        if(globId->getType()->isArray())
+        {
+            ArrayType *at=(ArrayType*)globId->getType();
+            if(globId->haveInitVal)//声明时的形式为a[10]={11,};
+            {
+                for(auto i:at->constArrayInitVal)
+                    fprintf(yyout,"\t.word %d\n",i);
+            }
+            else //声明时的形式为a[10];默认初值为0
+            {
+                int elementNum=1;
+                for(auto i:at->dimsVal)
+                    elementNum*=i;
+                for(int i=0;i<elementNum;i++)
+                    fprintf(yyout,"\t.word 0\n");
+            }
+        }
     }
 }
 
@@ -565,5 +583,6 @@ void MachineUnit::output()
         iter->output();
     printBridge();
 }
+
 
 

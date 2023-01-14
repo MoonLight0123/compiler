@@ -643,8 +643,6 @@ void AssignStmt::typeCheck()
     //         type1->toStr().c_str(), type2->toStr().c_str());
     //     //exit(EXIT_FAILURE);
     // }
-
-
 }
 
 void WhileStmt::typeCheck()
@@ -741,7 +739,7 @@ void ArrayElement::typeCheck()
      ffp=functionfalseParam.size();
      if(frp!=ffp)
      {
-         printf("funccall mismatch size\n");
+         //printf("funccall mismatch size\n");
          //exit(-1);
     }
     if( !(frp==0&& ffp==0)){
@@ -757,12 +755,12 @@ void ArrayElement::typeCheck()
             FunctionType *func=(FunctionType *)type;
             auto rettype=func->getRetType();
             if(rettype!=functionfalseParam[i]){
-                printf("funccall mismatch type\n");
+                //printf("funccall mismatch type\n");
             }
            }
             
             else if(functionRealParam[i]->getType()!=functionfalseParam[i]){
-            printf("funccall mismatch type\n");
+            //printf("funccall mismatch type\n");
            // exit(-1);
            }
            
@@ -777,10 +775,7 @@ void FuncRParam::typeCheck()
 {
 
 }
-void FuncFArrayParam::typeCheck()
-{
-    
-}
+
 void EmptyStmt::typeCheck()
 {
     //
@@ -1206,8 +1201,13 @@ void FuncCall::genCode()
     if(FuncRParams!=nullptr)
         FuncRParams->genCode();
     std::vector<Operand*> params;
-    if(FuncRParams!=nullptr)
+    if(FuncRParams!=nullptr){
         FuncRParams->getFuncRparamsOperand(params);
+        // for(auto &i:params){
+        //     printf("%s ",i->getEntry()->getType()->toStr().c_str());
+        //     printf("%d ",i->getEntry()->isVariable());
+        // }
+    }
     BasicBlock *bb=builder->getInsertBB();
     new CallInstruction(dst,params,FuncName->getSymPtr(),bb);
     //    params.push_back(FuncRParams->getOperand());
@@ -1236,27 +1236,37 @@ void FuncFArrayParam::output(int level)
         arrayDim->output(level+4);
 }
 
+void FuncFArrayParam::typeCheck()
+{
+    arrayId->typeCheck();
+    if(arrayDim!=nullptr)
+        arrayDim->typeCheck();
+    IdentifierSymbolEntry *se=(IdentifierSymbolEntry*)arrayId->getSymPtr();
+    ArrayType *at=(ArrayType*)se->getType();
+    at->dimsVal.push_back(-1);//数组参数第一维默认为-1
+    if(arrayDim!=nullptr)
+        arrayDim->getArrayDimVal(at->dimsVal);
+    // for(auto i:at->dimsVal)
+    //     printf("%d ",i);
+}
 void FuncFArrayParam::genCode()
 {
-    if(arrayDim==nullptr)//目前只处理了一维数组做参数的情况
-    {
-        IdentifierSymbolEntry *se = (IdentifierSymbolEntry*)(arrayId->getSymPtr());
-        Function *func = builder->getInsertBB()->getParent();
-        BasicBlock *bb=builder->getInsertBB();
-        SymbolEntry *addr_se;
-        Operand *addr;
-        addr_se=new TemporarySymbolEntry(new PointerType(se->getType()),SymbolTable::getLabel());
-        addr=new Operand(addr_se);
-        new AllocaInstruction(addr,se,bb);
-        SymbolEntry *ad=new IdentifierSymbolEntry(*se);
-        new StoreInstruction(addr,new Operand(ad),bb);
-        se->setAddr(addr);
-        ((IdentifierSymbolEntry*)ad)->paramNo=func->getParamCount();
-    }
-    else
-    {
-        //待补充
-    }
+    IdentifierSymbolEntry *se=(IdentifierSymbolEntry*)arrayId->getSymPtr();
+    ArrayType *at=(ArrayType*)se->getType();
+    Function *func = builder->getInsertBB()->getParent();
+    BasicBlock *bb=builder->getInsertBB();
+    SymbolEntry *addr_se;
+    Operand *addr;
+    addr_se=new TemporarySymbolEntry(new PointerType(se->getType()),SymbolTable::getLabel());
+    addr=new Operand(addr_se);
+    new AllocaInstruction(addr,se,bb);
+    SymbolEntry *ad=new IdentifierSymbolEntry(*se);
+    new StoreInstruction(addr,new Operand(ad),bb);
+    se->setAddr(addr);
+
+    ((IdentifierSymbolEntry*)ad)->paramNo=func->getParamCount();
+    se->paramNo=((IdentifierSymbolEntry*)ad)->paramNo;
+    
 }
 
 void EmptyStmt::output(int level)
@@ -1325,6 +1335,7 @@ void DeclArrayStmt::genCode()
         se->setAddr(addr);
         fprintf(yyout,"@%s =dso_local global %s zeroinitializer\n",se->name.c_str(),se->type->toStr().c_str());
         builder->getUnit()->getGlbIds().push_back(se);
+        se->haveInitVal=false;
     }
     else if(se->isLocal())
     {
@@ -1343,17 +1354,7 @@ void DeclArrayStmt::genCode()
     }
     else if(se->isParam())//数组参数 暂未实现
     {
-        // Function *func = builder->getInsertBB()->getParent();
-        // BasicBlock *bb=builder->getInsertBB();
-        // SymbolEntry *addr_se;
-        // Operand *addr;
-        // addr_se=new TemporarySymbolEntry(new PointerType(se->getType()),SymbolTable::getLabel());
-        // addr=new Operand(addr_se);
-        // new AllocaInstruction(addr,se,bb);
-        // SymbolEntry *ad=new IdentifierSymbolEntry(*se);
-        // new StoreInstruction(addr,new Operand(ad),bb);
-        // se->setAddr(addr);
-        // ((IdentifierSymbolEntry*)ad)->paramNo=func->getParamCount();
+        
     }
 }
 
@@ -1446,7 +1447,7 @@ void DeclArrayInitStmt::output(int level)
     initList->output(level+4);
 }
 void DeclArrayInitStmt::typeCheck()
-{//mu
+{//对于有初值的数组，现在只实现了一维数组和二维数组的初值，没有找到好方法  =.=
     DeclArrayStmt::typeCheck();
     initList->typeCheck();
     ArrayValDim* temp=new ArrayValDim();
@@ -1460,6 +1461,7 @@ void DeclArrayInitStmt::typeCheck()
     //at->dimsVal储存数组维度的vector
     int dimNo=at->dimsVal.size();
     int dimSize=at->dimsVal[dimNo-1];
+    Constant *zeroNode=new Constant(new ConstantSymbolEntry(TypeSystem::intType,0));
     Operand* zero=new Operand(new ConstantSymbolEntry(TypeSystem::intType,0));//未赋值默认为零
     if(((ArrayValDim*)initList)->dim==nullptr)
     {
@@ -1468,8 +1470,10 @@ void DeclArrayInitStmt::typeCheck()
             elementCount=at->dimsVal[0];
         else if(dimNo==2)
             elementCount=at->dimsVal[0]*at->dimsVal[1];
-        for(int i=elementCount;i>0;i--)
+        for(int i=elementCount;i>0;i--){
             arrayInitValOperands.push_back(zero);
+            constArrayInitNode.push_back(zeroNode);
+        }
         return;
     }
     int count=0;
@@ -1480,28 +1484,37 @@ void DeclArrayInitStmt::typeCheck()
         {
             if(((ArrayValDim*)node)->dim==nullptr)
             {
-                for(int i=0;i<dimSize;i++)
+                for(int i=0;i<dimSize;i++){
                     arrayInitValOperands.push_back(zero);
+                    constArrayInitNode.push_back(zeroNode);
+                }
             }
             if(count%dimSize!=0)
             {
-                for(int i=dimSize-count%dimSize;i>0;i--)
+                for(int i=dimSize-count%dimSize;i>0;i--){
                     arrayInitValOperands.push_back(zero);
+                    constArrayInitNode.push_back(zeroNode);
+                }
             }
             count=0;
             int secondDimSize=((ArrayValDim*)node)->initVals.size();
             if(secondDimSize<=dimSize)
             {
-                for(auto &t:((ArrayValDim*)node)->initVals)
+                for(auto &t:((ArrayValDim*)node)->initVals){
                     arrayInitValOperands.push_back(t->getOperand());
-                for(int i=dimSize-secondDimSize;i>0;i--)
+                    constArrayInitNode.push_back(t);
+                }
+                for(int i=dimSize-secondDimSize;i>0;i--){
                     arrayInitValOperands.push_back(zero);
+                    constArrayInitNode.push_back(zeroNode);
+                }
             }
             else printf("wrong init value!");
         }
         else
         {
             arrayInitValOperands.push_back(node->getOperand());
+            constArrayInitNode.push_back(node);
             count++;
         }
     }
@@ -1510,11 +1523,13 @@ void DeclArrayInitStmt::typeCheck()
         for(auto &node:((ArrayValDim*)temp->initVals[0])->initVals)
         {
             arrayInitValOperands.push_back(node->getOperand());
+            constArrayInitNode.push_back(node);
             count++;
         }
         for(int i=dimSize-count;i>0;i--)
         {
             arrayInitValOperands.push_back(zero);
+            constArrayInitNode.push_back(zeroNode);
         }
     }
 }
@@ -1522,9 +1537,17 @@ void DeclArrayInitStmt::genCode()
 {
     this->DeclArrayStmt::genCode();
     IdentifierSymbolEntry *se = dynamic_cast<IdentifierSymbolEntry *>(arrayId->getSymPtr());
-    if(se->isGlobal())
+    if(se->isGlobal())//arratInitVal中的元素必然是有初值的exprNode，直接取值即可
     {
-
+        se->haveInitVal=true;
+        ArrayType* at=(ArrayType*)se->getType();
+        for(auto &node:constArrayInitNode)
+        {
+            int val;
+            if(!node->isConstantVal(val))
+                printf("global array must init by const");
+            at->constArrayInitVal.push_back(val);
+        }
     }
     else if(se->isLocal())
     {
@@ -1547,14 +1570,11 @@ void DeclArrayInitStmt::genCode()
             SymbolEntry *addr_se=new TemporarySymbolEntry(t,SymbolTable::getLabel());
             Operand* addr=new Operand(addr_se);
             Operand* offsetOperand=new Operand(new ConstantSymbolEntry(TypeSystem::intType,offset++));
-            
             temp.push_back(offsetOperand);
             new GEPInstruction(addr,baseAddr,zero,temp,arrayId->getSymPtr(),bb);
             new StoreInstruction(addr,operand,bb);
             temp.pop_back();
         }
-        //Operand *src=initVal->getOperand();
-        //new StoreInstruction(se->getAddr(),src,bb);
     }
 }
 
@@ -1569,7 +1589,8 @@ void ArrayValList::output(int level)
 
 void ArrayValList::typeCheck()
 {
-
+    val1->typeCheck();
+    val2->typeCheck();
 }
 void ArrayValList::genCode()
 {
@@ -1587,7 +1608,8 @@ void ArrayValDim::output(int level)
 
 void ArrayValDim::typeCheck()
 {
-    
+    if(dim!=nullptr)
+        dim->typeCheck();
 }
 void ArrayValDim::genCode()
 {

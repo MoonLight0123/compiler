@@ -10,6 +10,8 @@
     Type *funcDeclType;
     std::vector<Type*> FuncFParamsTypeVector;
     std::vector<SymbolEntry*> FuncFParamsSymbolEntryVector;
+    std::vector<ExprNode*> valVector;
+    ArrayValDim* curArrayDim;
 }
 
 %code requires {
@@ -526,6 +528,20 @@ ConstDeclList
         $$ = new ConstDeclInitStmt(new Id(se),$3);
         delete []$1;
     }
+    | ID ConstArrayDims ASSIGN InitVal {
+        SymbolEntry *se;
+        se = identifiers->lookup($1);
+        if(se != nullptr)
+        {
+            fprintf(stderr, "identifier \"%s\" is defined\n", (char*)$1);
+            exit(1);
+        }
+        se = new IdentifierSymbolEntry(new ArrayType(basicDeclType), $1, identifiers->getLevel());
+        identifiers->install($1, se);
+        $$=new DeclArrayInitStmt(new Id(se),$2,$4);
+        delete []$1;
+    }
+    ;
     ;
 
 
@@ -601,12 +617,25 @@ FuncFParam
     ;
 FuncFArrayParamDims
 :
-    FuncFArrayParamDims LBRACKET ConstExp RBRACKET {
-        $$=new ArrayDims(nullptr,$1,$3);//应为constArrayDims  ?????
-    }
+    ConstArrayDims {$$=$1;}
     | %empty {$$=nullptr;}
 ;
 //变量初值 InitVal → Exp | '{' [ InitVal { ',' InitVal } ] '}'
+// InitVal
+//     :
+//     Exp {$$=$1;}
+//     | LBRACE
+//     {
+//         $$=new ArrayValDim(nullptr,nullptr);
+//         valVector.push_back($$);
+//         curArrayDim=$$;
+//     } InitArrayValList RBRACE {
+//         $$->setDim($3);
+//         valVector.pop_back();
+//         curArrayDim=valVector.back();
+//     }
+//     ;
+
 InitVal
     :
     Exp {$$=$1;}
@@ -614,7 +643,6 @@ InitVal
         $$=new ArrayValDim(nullptr,$2);
     }
     ;
-
 InitArrayValList    :
     InitVal COMMA InitArrayValList {
         $$=new ArrayValList(nullptr,$1,$3);//exprnode中的se不需要赋值 nullptr即可
