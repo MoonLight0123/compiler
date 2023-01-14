@@ -285,7 +285,6 @@ GEPInstruction::GEPInstruction(Operand *dst,Operand *base,Operand *baseOffset,st
     baseOffset->setDef(this);
     this->arraySe = arraySe;
     operands.insert(operands.end(), dimsValAddr.begin(), dimsValAddr.end());
-    //operands[0]为gep指令的目标地址，operands[1]到operands[N]为要访问的数组各维度的值
     //this->dimsValAddr=dimsValAddr;
 }
 
@@ -493,7 +492,16 @@ void AllocaInstruction::genMachineCode(AsmBuilder *builder)
      * Allocate stack space for local variabel
      * Store frame offset in symbol entry */
     auto cur_func = builder->getFunction();
-    int offset = cur_func->AllocSpace(4);
+    int offset=0;
+    if(se->getType()->isArray())
+    {
+        int elementNum=1;
+        for(auto i:((ArrayType*)se->getType())->dimsVal)
+            elementNum*=i;
+        offset=cur_func->AllocSpace(4*elementNum);
+    }
+    else
+        offset = cur_func->AllocSpace(4);
     dynamic_cast<TemporarySymbolEntry *>(operands[0]->getEntry())->setOffset(-offset);
 }
 
@@ -585,7 +593,14 @@ void StoreInstruction::genMachineCode(AsmBuilder *builder)
         // example: Store r1, [r0]
         auto dst = genMachineOperand(operands[0]);
         auto src = genMachineOperand(operands[1]);
-        cur_inst = new StoreMInstruction(cur_block, dst, src);
+        if (src->isImm())
+        {
+            auto internal_reg = genMachineVReg();
+            cur_inst = new LoadMInstruction(cur_block, internal_reg, src);
+            cur_block->InsertInst(cur_inst);
+            src = new MachineOperand(*internal_reg);
+        }
+        cur_inst = new StoreMInstruction(cur_block, src, dst);
         cur_block->InsertInst(cur_inst);
     }
 }
@@ -702,9 +717,7 @@ void CmpInstruction::genMachineCode(AsmBuilder *builder)
     {
         cur_inst = new MovMInstruction(cur_block, MovMInstruction::MOV, dst, falseOperand, 1-opcode);
         cur_block->InsertInst(cur_inst);
-    
     }
-
     else
     {
         cur_inst = new MovMInstruction(cur_block, MovMInstruction::MOV, dst, falseOperand, 7 - opcode);
@@ -778,7 +791,7 @@ void RetInstruction::genMachineCode(AsmBuilder *builder)
         cur_inst = new MovMInstruction(cur_block, MovMInstruction::MOV, r0, ret);
         cur_block->InsertInst(cur_inst);
     }
-    auto fp = genMachineReg(11);
+    //auto fp = genMachineReg(11);
     auto lr = genMachineReg(14);
     auto sp = genMachineReg(13);
     auto offset = genMachineImm(builder->getFunction()->getStackSize());
@@ -872,6 +885,62 @@ void ExtInstruction::genMachineCode(AsmBuilder *builder)
 }
 void GEPInstruction::genMachineCode(AsmBuilder *builder)
 {
+    MachineBlock *cur_block=builder->getBlock();
+    MachineInstruction *cur_inst=nullptr;
+
+    //计算数组相对fp的偏移
+    auto base=genMachineImm(((TemporarySymbolEntry*)operands[1]->getEntry())->getOffset());
+
+    //计算待访问元素相对基址的偏移
+    auto r0=genMachineReg(0);
+    cur_inst=new StackMInstrcuton(cur_block,StackMInstrcuton::PUSH,r0);
+    cur_block->InsertInst(cur_inst);
+
+    //auto offsetSum=genMachineVReg();
+    auto offsetSum=genMachineReg(0);
+    auto zero=genMachineImm(0);
+    cur_inst=new MovMInstruction(cur_block,MovMInstruction::MOV,offsetSum,zero);
+    cur_block->InsertInst(cur_inst);
+    std::vector<int> &dimval=((ArrayType*)arraySe->getType())->dimsVal;
+    int curDimOffset=4;
+    for(int i=operands.size()-1;i>=3;i--)
+    {
+        auto offset=genMachineOperand(operands[i]);
+        if (offset->isImm())
+        {
+            auto internal_reg = genMachineVReg();
+            cur_inst = new LoadMInstruction(cur_block, internal_reg, offset);
+            cur_block->InsertInst(cur_inst);
+            offset = new MachineOperand(*internal_reg);
+        }
+        auto imm=genMachineImm(curDimOffset);
+        if (imm->isImm())
+        {
+            auto internal_reg = genMachineVReg();
+            cur_inst = new LoadMInstruction(cur_block, internal_reg, imm);
+            cur_block->InsertInst(cur_inst);
+            imm = new MachineOperand(*internal_reg);
+        }
+        auto temp=genMachineVReg();
+        cur_inst=new BinaryMInstruction(cur_block,BinaryMInstruction::MUL,temp,offset,imm);
+        cur_block->InsertInst(cur_inst);
+        cur_inst=new BinaryMInstruction(cur_block,BinaryMInstruction::ADD,offsetSum,offsetSum,temp);
+        cur_block->InsertInst(cur_inst);
+        curDimOffset=curDimOffset*dimval[i-3];
+    }
+
+    //计算待访问元素相对fp的偏移
+    //auto addr=genMachineOperand(operands[0]);
+    auto elementBase=genMachineVReg();
+    cur_inst=new BinaryMInstruction(cur_block,BinaryMInstruction::ADD,elementBase,offsetSum,base);
+    cur_block->InsertInst(cur_inst);
 
 
+    auto addr=genMachineOperand(operands[0]);
+    auto fp=genMachineReg(11);
+    cur_inst=new BinaryMInstruction(cur_block,BinaryMInstruction::ADD,addr,fp,elementBase);
+    cur_block->InsertInst(cur_inst);
+
+    cur_inst=new StackMInstrcuton(cur_block,StackMInstrcuton::POP,r0);
+    cur_block->InsertInst(cur_inst);
 }
